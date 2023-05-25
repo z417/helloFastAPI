@@ -4,7 +4,7 @@
  * @Author       : Yuri
  * @Date         : 09/Apr/2023 10:03
  * @LastEditors  : Yuri
- * @LastEditTime : 25/May/2023 06:24
+ * @LastEditTime : 25/May/2023 08:49
  * @FilePath     : /teach/helloFastAPI/backend/src/main.py
  * @Description  : file desc
 '''
@@ -121,6 +121,6 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=12345,
         log_level="debug",
-        debug=True,
+        # debug=True,
         reload=True,
     )
