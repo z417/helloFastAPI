@@ -1,0 +1,16 @@
+**/.DS_Store
+**/logs
+**/node_modules
+**/__pycache__
+**/.vscode
+**/*.pyc
+**/.python-version
+**/.idea
+**/conf
+**/blog
+**/pkg
+**/bin
+**/a_t.json
+**/go
+**/*.png
+*.exe

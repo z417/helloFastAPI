@@ -4,7 +4,7 @@
  * @Author       : Yuri
  * @Date         : 27/Apr/2023 13:49
  * @LastEditors  : Yuri
- * @LastEditTime : 06/May/2023 09:25
+ * @LastEditTime : 25/May/2023 06:11
  * @FilePath     : /teach/helloFastAPI/backend/src/Auth/router.py
  * @Description  : Auth endpoints
 '''
@@ -14,9 +14,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordRequestForm
 from src.Auth.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from src.Auth.dependencies import (authenticate_user_in_db, create_refresh_token,
-                                   create_token, renew_token_via_refresh, get_user_from_db)
+                                   create_token, renew_token_via_refresh, get_user_from_db, get_current_user)
 from src.Auth.schemas import (
-    TokenResponseSchema, SignupSchema, SignupResponseSchema, RenewTokenResponseSchema)
+    TokenResponseSchema, SignupSchema, SignupResponseSchema, RenewTokenResponseSchema, ProfileResponseSchema)
 from src.Auth.models import Users
 
 router = APIRouter(
@@ -83,3 +83,18 @@ async def renew_token(
 ):
     new_token = await renew_token_via_refresh(refresh_token)
     return RenewTokenResponseSchema(access_token=new_token)
+
+
+@router.get(
+    '/profile',
+    status_code=status.HTTP_200_OK,
+    response_model=ProfileResponseSchema
+)
+async def get_profile(current_user=Depends(get_current_user)):
+    return ProfileResponseSchema(
+        uid=current_user.uid,
+        email=current_user.email,
+        full_name=current_user.full_name,
+        avatar=current_user.avatar,
+        birthday=current_user.birthday,
+    )

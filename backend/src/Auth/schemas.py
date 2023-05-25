@@ -4,7 +4,7 @@
  * @Author       : Yuri
  * @Date         : 27/Apr/2023 06:12
  * @LastEditors  : Yuri
- * @LastEditTime : 05/May/2023 08:03
+ * @LastEditTime : 25/May/2023 06:04
  * @FilePath     : /teach/helloFastAPI/backend/src/Auth/schemas.py
  * @Description  : pydantic models for request and response
 '''
@@ -61,3 +61,11 @@ class SignupResponseSchema(BaseModel):
     full_name: str
     email: EmailStr
     frequency_max: int
+
+
+class ProfileResponseSchema(BaseModel):
+    uid: UUID4
+    email: EmailStr
+    full_name: str
+    avatar: Optional[str]
+    birthday: Optional[date]

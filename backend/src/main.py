@@ -4,7 +4,7 @@
  * @Author       : Yuri
  * @Date         : 09/Apr/2023 10:03
  * @LastEditors  : Yuri
- * @LastEditTime : 05/May/2023 05:59
+ * @LastEditTime : 25/May/2023 06:24
  * @FilePath     : /teach/helloFastAPI/backend/src/main.py
  * @Description  : file desc
 '''
@@ -30,7 +30,7 @@ def conf_init(app: FastAPI):
 
 def router_init(app: FastAPI):
     app.include_router(auth_router)
-    app.include_router(file_code_box_router)
+    # app.include_router(file_code_box_router)
 
 
 def middleware_init(app: FastAPI):
@@ -84,8 +84,8 @@ def create_app() -> FastAPI:
             "email": "zhongtuo@haozhuinuo.com"
         },
         license_info={
-            'name': 'LGPL-1.3',
-            'url': 'https://www.gnu.org/licenses/fdl-1.3-standalone.html'
+            'name': 'LGPL-3.0',
+            'url': 'https://www.gnu.org/licenses/gpl-3.0.txt'
         },
         responses={404: {"description": "Not found"}},
         swagger_ui_parameters={"defaultModelsExpandDepth": -1},
