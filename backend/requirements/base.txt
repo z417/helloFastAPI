@@ -1,9 +1,10 @@
-fastapi>=0.95.0
-uvicorn>=0.21.1
+# sqlalchemy==1.4.41
+fastapi>=0.88.0
+uvicorn[standard]>=0.21.1
 python-jose[cryptography]>=3.3.0
 python-multipart>=0.0.6
-pydantic[email]>=1.10.4
 passlib>=1.7.4
-sqlalchemy==1.4.41
-ormar==0.12.1
+ormar[crypto]>=0.12.1
+pydantic[email]
 cacheout>=0.14.1
+gevent>=22.10.2
