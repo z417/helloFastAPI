@@ -4,14 +4,17 @@
  * @Author       : Yuri
  * @Date         : 09/Apr/2023 14:08
  * @LastEditors  : Yuri
- * @LastEditTime : 06/May/2023 09:26
+ * @LastEditTime : 05/Jun/2023 07:33
  * @FilePath     : /teach/helloFastAPI/backend/src/models.py
  * @Description  : global models
 '''
 from datetime import datetime
+from typing import Generic, Optional, TypeVar
 
 from ormar import UUID, DateTime, ModelMeta
-from pydantic import UUID4, BaseModel as PydanticBaseModel
+from pydantic import UUID4
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic.generics import GenericModel
 from sqlalchemy import func
 from src.tools.dbs import database, metadata
 
@@ -44,8 +47,17 @@ class DateFieldsMixins:
 
 class BaseModel(PydanticBaseModel):
     class Config:
-        # alias_generator = camel  # disabled by swagger Authorize not work
+        alias_generator = camel
         orm_mode = True
+
+
+DataT = TypeVar('DataT')
+
+
+class ResponseModel(GenericModel, Generic[DataT]):
+    data: Optional[DataT]
+    status: int = 1
+    errCode: int = 200
 
 
 if __name__ == '__main__':

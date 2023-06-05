@@ -15,7 +15,7 @@ from pathlib import Path
 
 def singleton(cls):
     """
-    单例模式装饰器
+    singleton pattern decorator
     :param cls: the object you want to set singleton
     :return:
     """
@@ -51,10 +51,11 @@ class Log():
 
 
 # Create a global logger object, named L
-L = Log().get_logger
+L = Log('helloFastApi').get_logger
 
 if __name__ == "__main__":
     L.info('this is info msg')
     L.debug('this is debug msg')
     L.error('this is error msg')
     L.warning('this is warning msg')
+    print(L.handlers)

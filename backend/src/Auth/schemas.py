@@ -4,11 +4,11 @@
  * @Author       : Yuri
  * @Date         : 27/Apr/2023 06:12
  * @LastEditors  : Yuri
- * @LastEditTime : 25/May/2023 06:04
+ * @LastEditTime : 02/Jun/2023 13:02
  * @FilePath     : /teach/helloFastAPI/backend/src/Auth/schemas.py
  * @Description  : pydantic models for request and response
 '''
-from pydantic import EmailStr, Field, UUID4
+from pydantic import EmailStr, Field, UUID4, validator
 from src.Auth.types import _NameType
 from src.models import BaseModel
 from typing import Optional
@@ -17,9 +17,9 @@ from datetime import date
 
 class TokenResponseSchema(BaseModel):
     '''token response class'''
-    access_token: str
-    token_type: str = 'bearer'
-    refresh_token: str
+    accessToken: str
+    tokenType: str = 'bearer'
+    refreshToken: str
 
 
 class RenewTokenResponseSchema(BaseModel):
@@ -37,6 +37,12 @@ class SignupSchema(BaseModel):
         description='base64 image encode',
         example='data:image/png;base64,iVBORw0KGgoAAAAN..'
     )
+
+    @validator('avatar')
+    def err_msg(cls, v):
+        if not v:
+            raise "{'detail': 'error message'}"
+        return v
 
     class Config:
         json_encoders = {

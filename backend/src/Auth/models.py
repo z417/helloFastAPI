@@ -4,18 +4,28 @@
  * @Author       : Yuri
  * @Date         : 09/Apr/2023 16:32
  * @LastEditors  : Yuri
- * @LastEditTime : 05/May/2023 10:57
+ * @LastEditTime : 05/Jun/2023 06:01
  * @FilePath     : /teach/helloFastAPI/backend/src/Auth/models.py
  * @Description  : db models
 '''
 from typing import ForwardRef, Optional
-from ormar import (UUID, Date, EncryptBackends, ForeignKey, Model, SmallInteger, String,
-                   Text, UniqueColumns, property_field)
+from uuid import uuid4
+
+from ormar import (
+    UUID,
+    Date,
+    EncryptBackends,
+    ForeignKey,
+    Model,
+    SmallInteger,
+    String,
+    Text,
+    UniqueColumns,
+    property_field,
+)
 from pydantic import UUID4, EmailStr
 from src.Auth.types import _NameType
 from src.models import BaseMeta, DateFieldsMixins
-from uuid import uuid4
-
 
 # create the forwardref to model "Users"
 UsersRef = ForwardRef("Users")
@@ -99,6 +109,7 @@ if __name__ == '__main__':
     print(Users.Meta.table.columns.keys())
 
     from asyncio import run, sleep
+
     from sqlalchemy.ext.asyncio import create_async_engine
 
     async def create_table():

@@ -4,7 +4,7 @@
  * @Author       : Yuri
  * @Date         : 27/Apr/2023 06:34
  * @LastEditors  : Yuri
- * @LastEditTime : 06/May/2023 09:58
+ * @LastEditTime : 02/Jun/2023 09:56
  * @FilePath     : /teach/helloFastAPI/backend/src/Auth/dependencies.py
  * @Description  : verify the data conforms to database constraints
 '''
@@ -18,6 +18,7 @@ from src.Auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM,
                              DEFAULT_TOKEN_EXPIRE_MINUTES, PWD_CONTEXT,
                              REFRESH_TOKEN_EXPIRE_MINUTES, SECRET_KEY, TOKEN_URL)
 from src.Auth.models import Users
+from src.exceptions import BadRequestException
 
 cache = LFUCache()
 
@@ -107,10 +108,11 @@ async def verify_passwd(plain_passwd, hashed_passwd) -> bool:
 async def authenticate_user_in_db(user_name: str, passwd: str) -> Users:
     q_user = await get_user_from_db(email__icontains=user_name)
     if not q_user or q_user.password != passwd:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Incorrect userName or password'
-        )
+        # raise HTTPException(
+        #     status_code=status.HTTP_400_BAD_REQUEST,
+        #     detail='Incorrect userName or password'
+        # )
+        raise BadRequestException('Incorrect userName or password')
     if q_user.user_status == 2:
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
