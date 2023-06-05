@@ -4,22 +4,23 @@
  * @Author       : Yuri
  * @Date         : 27/Apr/2023 06:12
  * @LastEditors  : Yuri
- * @LastEditTime : 02/Jun/2023 13:02
+ * @LastEditTime : 05/Jun/2023 08:23
  * @FilePath     : /teach/helloFastAPI/backend/src/Auth/schemas.py
  * @Description  : pydantic models for request and response
 '''
-from pydantic import EmailStr, Field, UUID4, validator
+from datetime import date
+from typing import Optional
+
+from pydantic import UUID4, EmailStr, Field, validator
 from src.Auth.types import _NameType
 from src.models import BaseModel
-from typing import Optional
-from datetime import date
 
 
 class TokenResponseSchema(BaseModel):
     '''token response class'''
-    accessToken: str
-    tokenType: str = 'bearer'
-    refreshToken: str
+    access_token: str
+    token_type: str = 'Bearer'
+    refresh_token: str
 
 
 class RenewTokenResponseSchema(BaseModel):

@@ -4,7 +4,7 @@
  * @Author       : Yuri
  * @Date         : 09/Apr/2023 14:08
  * @LastEditors  : Yuri
- * @LastEditTime : 05/Jun/2023 07:33
+ * @LastEditTime : 05/Jun/2023 08:27
  * @FilePath     : /teach/helloFastAPI/backend/src/models.py
  * @Description  : global models
 '''
@@ -47,7 +47,7 @@ class DateFieldsMixins:
 
 class BaseModel(PydanticBaseModel):
     class Config:
-        alias_generator = camel
+        # alias_generator = camel  # disabled by swagger Authorize not work
         orm_mode = True
 
 

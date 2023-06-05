@@ -4,7 +4,7 @@
  * @Author       : Yuri
  * @Date         : 27/Apr/2023 13:49
  * @LastEditors  : Yuri
- * @LastEditTime : 05/Jun/2023 07:14
+ * @LastEditTime : 05/Jun/2023 08:31
  * @FilePath     : /teach/helloFastAPI/backend/src/Auth/router.py
  * @Description  : Auth endpoints
 '''
@@ -47,7 +47,7 @@ router = APIRouter(
 
 @router.post(
     '/token',
-    response_model=ResponseModel[TokenResponseSchema],
+    response_model=TokenResponseSchema,
     status_code=status.HTTP_201_CREATED
 )
 async def OAuth2_login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -56,7 +56,7 @@ async def OAuth2_login(form_data: OAuth2PasswordRequestForm = Depends()):
         data={"sub": user.email},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     refresh_token = await create_refresh_token(data)
-    return ResponseModel(data=TokenResponseSchema(accessToken=access_token, refreshToken=refresh_token))
+    return TokenResponseSchema(access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post(
@@ -76,13 +76,13 @@ async def signup(req: SignupSchema):
         try:
             await new_user.save()
             await new_user.upsert(created_by=new_user.uid, updated_by=new_user.uid)
-            return ResponseModel(
-                data=SignupResponseSchema(
-                    uid=new_user.uid,
-                    fullName=new_user.full_name,
-                    email=new_user.email,
-                    frequencyMax=new_user.frequency_max
-                ))
+            data = SignupResponseSchema(
+                uid=new_user.uid,
+                full_name=new_user.full_name,
+                email=new_user.email,
+                frequency_max=new_user.frequency_max
+            )
+            return ResponseModel(data=data)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -94,20 +94,20 @@ async def signup(req: SignupSchema):
     '/token',
     status_code=status.HTTP_205_RESET_CONTENT,
     response_model=ResponseModel[RenewTokenResponseSchema],
-    openapi_extra={
-        "responses": {
-            "400": {
-                "description": "Bad Request",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "$ref": "#/components/schemas/TokenResponseSchema"
-                        }
-                    }
-                }
-            }
-        }
-    },
+    # openapi_extra={
+    #     "responses": {
+    #         "400": {
+    #             "description": "Bad Request",
+    #             "content": {
+    #                 "application/json": {
+    #                     "schema": {
+    #                         "$ref": "#/components/schemas/TokenResponseSchema"
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     }
+    # },
 )
 async def renew_token(
     refresh_token: str = Query(
@@ -117,7 +117,7 @@ async def renew_token(
     )
 ):
     new_token = await renew_token_via_refresh(refresh_token)
-    return ResponseModel(data=RenewTokenResponseSchema(accessToken=new_token))
+    return ResponseModel(data=RenewTokenResponseSchema(access_token=new_token))
 
 
 @router.get(
@@ -129,7 +129,7 @@ async def get_profile(current_user=Depends(get_current_user)):
     data = ProfileResponseSchema(
         uid=current_user.uid,
         email=current_user.email,
-        fullName=current_user.full_name,
+        full_name=current_user.full_name,
         avatar=current_user.avatar,
         birthday=current_user.birthday,
     )

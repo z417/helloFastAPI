@@ -4,19 +4,26 @@
  * @Author       : Yuri
  * @Date         : 27/Apr/2023 06:34
  * @LastEditors  : Yuri
- * @LastEditTime : 02/Jun/2023 09:56
+ * @LastEditTime : 05/Jun/2023 08:18
  * @FilePath     : /teach/helloFastAPI/backend/src/Auth/dependencies.py
  * @Description  : verify the data conforms to database constraints
 '''
 from datetime import datetime, timedelta
-from typing import Mapping, Tuple, Union, Optional
+from typing import Mapping, Optional, Tuple, Union
+
 from cacheout import LFUCache
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import ExpiredSignatureError, JWTError, jwt
-from src.Auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM,
-                             DEFAULT_TOKEN_EXPIRE_MINUTES, PWD_CONTEXT,
-                             REFRESH_TOKEN_EXPIRE_MINUTES, SECRET_KEY, TOKEN_URL)
+from src.Auth.config import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    ALGORITHM,
+    DEFAULT_TOKEN_EXPIRE_MINUTES,
+    PWD_CONTEXT,
+    REFRESH_TOKEN_EXPIRE_MINUTES,
+    SECRET_KEY,
+    TOKEN_URL,
+)
 from src.Auth.models import Users
 from src.exceptions import BadRequestException
 
