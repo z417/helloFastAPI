@@ -1,61 +1,102 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
  * @Author: z417
  * @Date: 2020-11-16 11:12:43
  * @LastEditors: z417
  * @LastEditTime: 2020-11-16 11:12:50
- * @FilePath: ./helloFastAPI/backend/utils/logs.py
+ * @FilePath: helloFastAPI/backend/src/tools/logs.py
  * @Description: logging mudule
-'''
-from functools import wraps
+"""
 from logging import Logger, config, getLogger
 from pathlib import Path
 
-
-def singleton(cls):
-    """
-    singleton pattern decorator
-    :param cls: the object you want to set singleton
-    :return:
-    """
-    instances = {}
-
-    @wraps(cls)
-    def _wrapper(*args, **kwargs):
-        if cls not in instances:
-            instances[cls] = cls(*args, **kwargs)
-        return instances[cls]
-
-    return _wrapper
+from src.settings import settings
 
 
-@singleton
-class Log():
-    def __init__(self, name='root'):
+class Log:
+    __app_logging_config: dict = {
+        # https://docs.python.org/3/library/logging.config.html
+        "version": 1,  # The only valid value at present is 1
+        "disable_existing_loggers": False,
+        "formatters": {
+            "default": {
+                # "()": "uvicorn.logging.AccessFormatter",  # ()means user-defined instantiation is wanted
+                "format": "[%(levelname)s %(asctime)s.%(msecs)03d %(module)s.%(funcName)s(%(lineno)d)]: %(message)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "style": "%",
+                # "validate": "",
+            },
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                # "level": "",
+                "formatter": "default",
+                # "filters": "",
+                "stream": "ext://sys.stdout",
+            },
+            "file": {
+                "class": "logging.handlers.TimedRotatingFileHandler",
+                "formatter": "default",
+                "filename": settings.APP_RUN_LOG,
+                "when": "W3",  # Save log to a new file at 12am on Thursday
+                "interval": 1,  # everyweek
+                "backupCount": settings.APP_LOG_BACKUP_COUNT,
+                "encoding": "utf-8",
+            },
+        },
+        "root": {
+            "level": "INFO",
+            "handlers": ["console"],
+        },
+        "loggers": {
+            settings.APP_NAME: {
+                "level": settings.APP_LOG_LEVEL.upper(),  # DEBUG > INFO > WARNING > ERROR > CRITICAL
+                "handlers": ["console", "file"],
+                "propagate": 0,  # propagate always set to 0
+            },
+        },
+    }
+
+    def __init__(self, name="root"):
         """
-        :param name:
+        :param name: the logger
         """
-        # Save log to a new file at 12am everyday, no more than 6 files. utf-8
-        self.__conf_log__ = Path().joinpath('conf', 'log.ini')
+        result = "Log configuration succeeds"
+        self.name = name
         try:
-            config.fileConfig(self.__conf_log__)
-        except FileNotFoundError as e:
-            Path(e.filename).parent.mkdir()
-            config.fileConfig(self.__conf_log__)
-        self.__logger__ = getLogger(name)
+            self.__config()
+        except Exception as e:
+            if isinstance(e.__cause__, FileNotFoundError):
+                Path(e.__cause__.filename).parent.mkdir()
+                print(f"+++++{Path(e.__cause__.filename).parent} was maked+++++")
+                try:
+                    self.__config()
+                except (ValueError, TypeError, AttributeError, ImportError) as e:
+                    result = f"{type(e)}: {e}"
+        finally:
+            print(f"-----{result}-----")
+
+    def __config(self):
+        try:
+            config.dictConfig(self.__app_logging_config)
+        except Exception as e:
+            raise e
+        else:
+            self.__logger__ = getLogger(self.name)
 
     @property
     def get_logger(self) -> Logger:
         return self.__logger__
 
 
-# Create a global logger object, named L
-L = Log('helloFastApi').get_logger
+L = Log(settings.APP_NAME).get_logger
 
 if __name__ == "__main__":
-    L.info('this is info msg')
-    L.debug('this is debug msg')
-    L.error('this is error msg')
-    L.warning('this is warning msg')
+    L.info("this is info msg")
+    L.debug("this is debug msg")
+    L.error("this is error msg")
+    L.warning("this is warning msg")
     print(L.handlers)
+    print(L.name)

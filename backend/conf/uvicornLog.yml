@@ -1,0 +1,66 @@
+ # @Author       : Yuri
+ # @Date         : 26/Aug/2023 11:54
+ # @LastEditors  : Yuri
+ # @LastEditTime : 26/Aug/2023 11:54
+ # @FilePath     : /teach/helloFastAPI/backend/conf/uvicornLog.yml
+ # @Description  : https://docs.python.org/3/library/logging.config.html
+version: 1
+disable_existing_loggers: false
+# below refer package: uvicorn.config.LOGGING_CONFIG
+formatters:
+  access:
+    (): uvicorn.logging.AccessFormatter
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    fmt: '[%(levelprefix)s%(asctime)s.%(msecs)03d]: %(client_addr)s - "%(request_line)s"
+      %(status_code)s'
+  accessNoColor:
+    (): uvicorn.logging.AccessFormatter
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    fmt: '[%(levelprefix)s%(asctime)s.%(msecs)03d]: %(client_addr)s - "%(request_line)s"
+      %(status_code)s'
+    use_colors: false
+  default:
+    (): uvicorn.logging.DefaultFormatter
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    fmt: '%(levelprefix)s%(asctime)s.%(msecs)03d %(module)s.%(funcName)s(%(lineno)d):
+      %(message)s'
+    style: '%'
+handlers:
+  accessConsole:
+    class: logging.StreamHandler
+    formatter: access
+    stream: ext://sys.stdout
+  accessFile:
+    backupCount: 4
+    class: logging.handlers.TimedRotatingFileHandler
+    encoding: utf-8
+    filename: logs/access.log
+    formatter: accessNoColor
+    interval: 1
+    when: W3
+  console:
+    class: logging.StreamHandler
+    formatter: default
+    stream: ext://sys.stderr
+loggers:
+  uvicorn:
+    handlers:
+      - console
+    level: INFO
+    propagate: 0
+  uvicorn.access:
+    handlers:
+      - accessConsole
+      - accessFile
+    level: INFO
+    propagate: 0
+  uvicorn.asgi:
+    handlers:
+      - console
+    level: INFO
+    propagate: 0
+  uvicorn.error:
+    handlers:
+      - console
+    level: ERROR
+    propagate: 0
