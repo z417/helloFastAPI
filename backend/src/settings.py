@@ -1,104 +1,79 @@
 #!/usr/bin/env python3
 # coding=UTF-8
-'''
+"""
  * @Author       : Yuri
  * @Date         : 02/Jun/2023 14:26
  * @LastEditors  : Yuri
- * @LastEditTime : 05/Jun/2023 06:21
- * @FilePath     : /teach/helloFastAPI/backend/src/settings.py
+ * @LastEditTime : 25/Aug/2023 13:43
+ * @FilePath     : /helloFastAPI/backend/src/settings.py
  * @Description  : file desc
-'''
-from os import environ
-from uuid import uuid1
+"""
+from json import dumps, loads
+from pathlib import Path
+from typing import Union
 
-from databases import Database
-from fastapi import FastAPI, Request, Response
-from src.Auth.router import router as auth_router
-from src.tools.logs import L
-from starlette.middleware.cors import CORSMiddleware
+from starlette.config import Config, environ
+from starlette.datastructures import Secret
 
-
-def db_init(app: FastAPI):
-
-    @app.on_event('startup')
-    async def startup():
-        L.info('Process database connection')
-        database_: Database = app.state.database
-        if not database_.is_connected:
-            await database_.connect()
-
-    @app.on_event('shutdown')
-    async def shutdown():
-        database_: Database = app.state.database
-        if database_.is_connected:
-            await database_.disconnect()
+ENV_FILE: Union[str, None] = environ.get("ENV_FILE")
+if not ENV_FILE:
+    print('-----ENV_FILE not specified, ".env" used as default-----')
+    ENV_FILE = ".env"
+config = Config(ENV_FILE)
 
 
-def router_init(app: FastAPI):
-    app.include_router(auth_router)
-    # app.include_router(file_code_box_router)
+class Settings:
+    """load settings"""
 
-
-def middleware_init(app: FastAPI):
-    origins = ['*']
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=origins,
-        allow_credentials=True,
-        allow_methods=['*'],
-        allow_headers=['*'],
+    APP_NAME: str = config("APP_NAME", default="helloFastApi")
+    APP_VERSION: str = config("APP_VERSION", default="0.0.1")
+    APP_TITLE: str = config("APP_TITLE", default="Hello FastApi")
+    APP_DESC: str = config("APP_DESC", default="A demo for fastapi")
+    APP_LICENSE: dict = config(
+        "APP_LICENSE",
+        cast=loads,
+        default='{"name": "LGPL-3.0", "url": "https://www.gnu.org/licenses/gpl-3.0.txt"}',
     )
-
-    @app.middleware('http')
-    async def add_request_id(r: Request, call_next):
-        r.state.request_id = str(uuid1())
-        resp: Response = await call_next(r)
-        resp.headers['X-Request-ID'] = r.state.request_id
-        return resp
-
-
-def target_env_init(app: FastAPI):
-    env = environ.get('ENVIRONMENT', 'dev')
-    L.info(f'Start server with {env} environment')
-    if env == 'prod':
-        app.docs_url = None
-        app.redoc_url = None
-        app.debug = False
-        return
-    custom_openapi(app)
-
-
-def custom_openapi(app: FastAPI):
-    if app.openapi_schema:
-        return
-    from fastapi.openapi.utils import get_openapi
-    openapi_schema = get_openapi(
-        title=app.title,
-        version=app.version,
-        routes=app.routes,
+    APP_CONTACT: dict = config(
+        "APP_CONTACT",
+        cast=loads,
+        default='{"name": "HZN", "url": "https://www.haozhinuo.com", "email": "zhongtuo@haozhinuo.com"}',
     )
-    http_methods = ["post", "get", "put", "delete",
-                    "patch", "delete", "head", "options"]
-    # look for the error 422 and removes it
-    for method in openapi_schema["paths"]:
-        for m in http_methods:
-            try:
-                del openapi_schema["paths"][method][m]["responses"]["422"]
-            except KeyError:
-                pass
-    for schema in list(openapi_schema["components"]["schemas"]):
-        if schema == "HTTPValidationError" or schema == "ValidationError":
-            del openapi_schema["components"]["schemas"][schema]
-    openapi_schema["info"].update({
-        "description": "Hello FastAPI",
-        "license": {
-            "name": "LGPL-3.0",
-            "url": "https://www.gnu.org/licenses/gpl-3.0.txt"
-        },
-        "contact": {
-            "name": "HZN",
-            "url": "https://www.haozhinuo.com",
-            "email": "zhongtuo@haozhuinuo.com"
-        },
-    })
-    app.openapi_schema = openapi_schema
+    APP_RUN_LOG: str = config("APP_RUN_LOG", cast=str, default="logs/run.log")
+    APP_LOG_LEVEL: str = config("APP_LOG_LEVEL", default="INFO")
+    # uvicorn_access_log backupCount should set via yml
+    APP_LOG_BACKUP_COUNT: int = config("APP_LOG_BACKUP_COUNT", cast=int, default=4)
+    OPENAPI_URL: str = config("OPENAPI_URL", cast=str, default="/api/v3/openapi.json")
+    ENABLE_API_DOCS: bool = config("ENABLE_API_DOCS", cast=bool, default=False)
+    UVICORN_HOST: str = config("UVICORN_HOST", cast=str, default="127.0.0.1")
+    UVICORN_PORT: int = config("UVICORN_PORT", cast=int, default=8000)
+    UVICORN_LOG_CONFIG: str = config(
+        "UVICORN_LOG_CONFIG", cast=str, default="conf/uvicornLog.yml"
+    )
+    UVICORN_LOG_LEVEL: str = config("UVICORN_LOG_LEVEL", cast=str.lower, default="info")
+    UVICORN_RELOAD: bool = config("UVICORN_RELOAD", cast=bool, default=False)
+    UVICORN_SSL_KEYFILE: str = config("UVICORN_SSL_KEYFILE", cast=str, default="")
+    UVICORN_SSL_CERTFILE: str = config("UVICORN_SSL_CERTFILE", cast=str, default="")
+    DB_URL = config("DB_URL", cast=Secret, default="sqlite+aiosqlite:///:memory:")
+
+
+settings = Settings()
+
+env_path = Path(ENV_FILE)
+if not env_path.exists():
+    print(f'-----"{ENV_FILE}" not exists, initial once at 1st run time-----')
+    with env_path.open(mode="w+", encoding="utf-8") as f:
+        for k in filter(lambda x: not x.startswith("__"), vars(Settings)):
+            v = getattr(settings, k)
+            v = v if not isinstance(v, dict) else dumps(v)
+            f.write(f"{k}={v}\n")
+        f.flush()
+
+if __name__ == "__main__":
+    print(settings.APP_TITLE)
+    print(settings.OPENAPI_URL)
+    print(settings.APP_LICENSE)
+    print(settings.UVICORN_LOG_LEVEL)
+    print(settings.ENABLE_API_DOCS)
+    print(settings.UVICORN_SSL_KEYFILE)
+    print(settings.DB_URL)

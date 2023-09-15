@@ -7,3 +7,5 @@
 **/.idea
 **/blog
 **/*.png
+**/.env
+**/data

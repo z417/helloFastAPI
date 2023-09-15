@@ -1,0 +1,36 @@
+{
+    "[python]": {
+        "diffEditor.ignoreTrimWhitespace": false,
+        "gitlens.codeLens.symbolScopes": [
+            "!Module"
+        ],
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": false
+        },
+        "editor.formatOnType": false,
+        "editor.wordBasedSuggestions": false,
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": false,
+    },
+    "python.analysis.autoImportCompletions": false,
+    "python.analysis.extraPaths": [],
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
+    "pylint.args": ["--rcfile=${workspaceFolder}/backend/.pylintrc"],
+    "isort.check": false,
+    "search.exclude": {
+        "**/__pycache__": true
+    },
+    "python.analysis.completeFunctionParens": true,
+    "python.analysis.inlayHints.pytestParameters": true,
+    "python.languageServer": "Pylance",
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestPath": "pytest",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportUnboundVariable": "information",
+        "reportImplicitStringConcatenation": "warning"
+    },
+    "python.analysis.typeCheckingMode": "basic",
+}

@@ -5,7 +5,7 @@
  * @Date: 2020-11-16 11:12:43
  * @LastEditors: z417
  * @LastEditTime: 2020-11-16 11:12:50
- * @FilePath: helloFastAPI/backend/src/tools/logs.py
+ * @FilePath: /helloFastAPI/backend/src/tools/logs.py
  * @Description: logging mudule
 """
 from logging import Logger, config, getLogger
@@ -15,6 +15,8 @@ from src.settings import settings
 
 
 class Log:
+    """Logger util"""
+
     __app_logging_config: dict = {
         # https://docs.python.org/3/library/logging.config.html
         "version": 1,  # The only valid value at present is 1
@@ -67,27 +69,27 @@ class Log:
         self.name = name
         try:
             self.__config()
-        except Exception as e:
-            if isinstance(e.__cause__, FileNotFoundError):
-                Path(e.__cause__.filename).parent.mkdir()
-                print(f"+++++{Path(e.__cause__.filename).parent} was maked+++++")
+        except ValueError as ex:
+            if isinstance(ex.__cause__, FileNotFoundError):
+                Path(ex.__cause__.filename).parent.mkdir()
+                print(f"+++++{Path(ex.__cause__.filename).parent} was maked+++++")
                 try:
                     self.__config()
-                except (ValueError, TypeError, AttributeError, ImportError) as e:
-                    result = f"{type(e)}: {e}"
+                except (ValueError, TypeError, AttributeError, ImportError) as m_e:
+                    result = f"{type(m_e)}: {m_e}"
         finally:
             print(f"-----{result}-----")
 
     def __config(self):
         try:
             config.dictConfig(self.__app_logging_config)
-        except Exception as e:
-            raise e
-        else:
-            self.__logger__ = getLogger(self.name)
+        except ValueError as ex:
+            raise ex
+        self.__logger__ = getLogger(self.name)
 
     @property
     def get_logger(self) -> Logger:
+        """get a logger"""
         return self.__logger__
 
 
