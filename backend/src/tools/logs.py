@@ -69,10 +69,10 @@ class Log:
         self.name = name
         try:
             self.__config()
-        except ValueError as ex:
-            if isinstance(ex.__cause__, FileNotFoundError):
-                Path(ex.__cause__.filename).parent.mkdir()
-                print(f"+++++{Path(ex.__cause__.filename).parent} was maked+++++")
+        except ValueError as e:
+            if isinstance(e.__cause__, FileNotFoundError):
+                Path(e.__cause__.filename).parent.mkdir()
+                print(f"+++++{Path(e.__cause__.filename).parent} was maked+++++")
                 try:
                     self.__config()
                 except (ValueError, TypeError, AttributeError, ImportError) as m_e:
@@ -83,8 +83,8 @@ class Log:
     def __config(self):
         try:
             config.dictConfig(self.__app_logging_config)
-        except ValueError as ex:
-            raise ex
+        except ValueError as e:
+            raise e
         self.__logger__ = getLogger(self.name)
 
     @property
