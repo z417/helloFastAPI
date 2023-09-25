@@ -55,6 +55,7 @@ class Settings:
     UVICORN_SSL_KEYFILE: str = config("UVICORN_SSL_KEYFILE", cast=str, default="")
     UVICORN_SSL_CERTFILE: str = config("UVICORN_SSL_CERTFILE", cast=str, default="")
     DB_URL = config("DB_URL", cast=Secret, default="sqlite+aiosqlite:///:memory:")
+    ENGINE_ARGS = config("ENGINE_ARGS", cast=loads, default='{"future": true}')
 
 
 settings = Settings()
@@ -77,3 +78,4 @@ if __name__ == "__main__":
     print(settings.ENABLE_API_DOCS)
     print(settings.UVICORN_SSL_KEYFILE)
     print(settings.DB_URL)
+    print(settings.ENGINE_ARGS)

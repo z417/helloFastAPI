@@ -1,0 +1,15 @@
+[project]
+# Support Python 3.8+.
+requires-python = ">=3.8"
+
+# https://beta.ruff.rs/docs/settings/
+[tool.ruff]
+# 1. Avoid enforcing line-length violations (`E501`)
+ignore = ["E501"]
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+# https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html
+[tool.black]
+line-length = 160

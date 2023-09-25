@@ -1,69 +1,57 @@
 #!/usr/bin/env python3
 # coding=UTF-8
-'''
+"""
  * @Author       : Yuri
  * @Date         : 09/Apr/2023 10:03
  * @LastEditors  : Yuri
- * @LastEditTime : 05/Jun/2023 06:22
- * @FilePath     : /teach/helloFastAPI/backend/src/main.py
+ * @LastEditTime : 25/Aug/2023 14:14
+ * @FilePath     : /helloFastAPI/backend/src/__main__.py
  * @Description  : file desc
-'''
-import uvicorn
+"""
 from fastapi import FastAPI
-from src.exceptions import APIException, http_exception_handler
-from src.settings import db_init, middleware_init, router_init, target_env_init
-from src.tools.dbs import database
-from src.tools.logs import L
+from uvicorn import run
+
+from src.appInit import AppInit
+from src.common.exceptions import APIException, http_exception_handler
+from src.middlewares import dbEngine
+from src.settings import settings
+from src.tools import L
 
 
 async def start_event() -> None:
-    from logging import getLogger
-    uvicorn_access = getLogger("uvicorn.access")
-    uvicorn_access.handlers = L.handlers
-    L.info(msg='Server start')
+    L.info(msg="Server start")
 
 
 async def shutdown_event() -> None:
-    L.info(msg='Server shutdown')
+    L.info(msg="Server shutdown")
+    await dbEngine.asyncDbengine.dispose()
 
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="HZN_DEMO",
-        version="0.0.1",
+        title=settings.APP_TITLE,
+        version=settings.APP_VERSION,
         on_startup=[start_event],
         on_shutdown=[shutdown_event],
-        openapi_url='/api/v3/openapi.json',
+        openapi_url=settings.OPENAPI_URL,
         swagger_ui_parameters={"defaultModelsExpandDepth": -1},
         exception_handlers={APIException: http_exception_handler},
+        docs_url="/docs" if settings.ENABLE_API_DOCS else None,
+        redoc_url="/redoc" if settings.ENABLE_API_DOCS else None,
     )
-
-    app.state.database = database
-    # 建表 TODO: 判断是否需要初始化
-    db_init(app)
-
-    # 初始化路由配置
-    router_init(app)
-
-    # 初始化中间件
-    middleware_init(app)
-
-    # 加载环境配置
-    target_env_init(app)
-
+    AppInit(app)
     return app
 
 
-app = create_app()
-# @app.get('/api/files/{filePath:path}')
-# async def get_file(filePath: str):
-#     return {filePath}
+helloFastApi = create_app()
 
-if __name__ == '__main__':
-    uvicorn.run(
-        app='main:app',
-        host='0.0.0.0',
-        port=12345,
-        log_level="debug",
-        reload=True,
+if __name__ == "__main__":
+    run(
+        app="main:helloFastApi",
+        host=settings.UVICORN_HOST,
+        port=settings.UVICORN_PORT,
+        log_config=settings.UVICORN_LOG_CONFIG,
+        log_level=settings.UVICORN_LOG_LEVEL,
+        ssl_keyfile=settings.UVICORN_SSL_KEYFILE,
+        ssl_certfile=settings.UVICORN_SSL_CERTFILE,
     )

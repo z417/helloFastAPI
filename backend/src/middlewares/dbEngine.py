@@ -35,7 +35,7 @@ class DBEngineMiddleware(BaseHTTPMiddleware):
         expire_on_commit: bool = False,
     ) -> None:
         super().__init__(app)
-        global asyncDbengine  # pylint: disable=W0603
+        global asyncDbengine
         self.expire_on_commit = expire_on_commit
         engine_args = engine_args or {}
         if custom_engine:
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     DATABASE_URL = "sqlite+aiosqlite:///:memory:"
     from fastapi import FastAPI
-    from sqlalchemy import text  # pylint: disable=C0412
+    from sqlalchemy import text
 
     DBEngineMiddleware(
         FastAPI(),

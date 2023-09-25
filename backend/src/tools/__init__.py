@@ -15,7 +15,7 @@ from os import PathLike, environ
 from subprocess import PIPE, Popen
 from typing import Union
 
-from .logs import L
+from src.tools.logs import L
 
 
 async def get_md5(key: str) -> str:
@@ -40,7 +40,7 @@ async def get_env(k: str) -> Union[str, KeyError]:
 async def shell(cmd: str) -> str:
     """execute commands"""
     output, _ = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE).communicate()
-    return output.decode("utf-8")
+    return output.decode("utf-8").strip()
 
 
 async def load_ini(file: Union[str, PathLike]) -> RawConfigParser:
@@ -96,7 +96,7 @@ __all__ = [
 if __name__ == "__main__":
     import asyncio
 
-    r = asyncio.run(shell("pwd"))
+    r = asyncio.run(shell("echo $PATH"))
     L.info(r)
 
     L.info(Chain().api.users("nick").profile)  # type: ignore

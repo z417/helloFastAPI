@@ -8,10 +8,10 @@
  * @FilePath     : /helloFastAPI/backend/src/common/exceptions.py
  * @Description  : global exceptions
 """
+from fastapi.utils import is_body_allowed_for_status_code
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-from fastapi.utils import is_body_allowed_for_status_code
 
 
 class APIException(Exception):
@@ -32,9 +32,7 @@ class APIException(Exception):
         return f"{class_name}(status_code={self.status_code!r}, error_info={self.message!r})"
 
 
-async def http_exception_handler(
-    request: Request, exc: APIException  # pylint: disable=W0613
-) -> Response:
+async def http_exception_handler(request: Request, exc: APIException) -> Response:
     """
     replace except_handler of fastapi
     """

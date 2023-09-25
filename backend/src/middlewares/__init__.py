@@ -8,11 +8,10 @@
  * @FilePath     : /helloFastAPI/backend/src/middlewares/__init__.py
  * @Description  : file desc
 """
-from .dbEngine import DBEngineMiddleware, asyncDbengine
-from .exceptions import MissingSessionError, SessionNotInitialisedError
+from src.middlewares.dbEngine import DBEngineMiddleware
+from src.middlewares.exceptions import MissingSessionError, SessionNotInitialisedError
 
 __all__ = [
-    "asyncDbengine",
     "DBEngineMiddleware",
     "MissingSessionError",
     "SessionNotInitialisedError",

@@ -11,9 +11,10 @@
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from src.middlewares import asyncDbengine
+
+from src.middlewares import dbEngine
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSession(asyncDbengine, expire_on_commit=False) as session:
+    async with AsyncSession(dbEngine.asyncDbengine, expire_on_commit=False) as session:
         yield session

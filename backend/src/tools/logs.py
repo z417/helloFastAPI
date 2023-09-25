@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# coding=UTF-8
 """
  * @Author: z417
  * @Date: 2020-11-16 11:12:43

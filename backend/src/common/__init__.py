@@ -8,8 +8,8 @@
  * @FilePath     : /helloFastAPI/backend/src/common/__init__.py
  * @Description  : file desc
 """
-from .dependencies import get_db_session
-from .exceptions import (
+from src.common.dependencies import get_db_session
+from src.common.exceptions import (
     BadRequestException,
     ConflictException,
     ForbiddenException,
@@ -17,7 +17,7 @@ from .exceptions import (
     NotFoundException,
     UnAuthenticatedException,
 )
-from .models import Base, BaseModel, ResponseModel
+from src.common.models import Base, BaseModel, ResponseModel
 
 __all__ = [
     "Base",

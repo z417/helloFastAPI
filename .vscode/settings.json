@@ -5,21 +5,15 @@
             "!Module"
         ],
         "editor.codeActionsOnSave": {
-            "source.organizeImports": false
+            "source.fixAll.ruff": true,
+            "source.organizeImports.ruff": true
         },
-        "editor.formatOnType": false,
         "editor.wordBasedSuggestions": false,
         "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.formatOnSave": false,
+        "editor.formatOnSave": true,
     },
     "python.analysis.autoImportCompletions": false,
     "python.analysis.extraPaths": [],
-    "isort.args": [
-        "--profile",
-        "black"
-    ],
-    "pylint.args": ["--rcfile=${workspaceFolder}/backend/.pylintrc"],
-    "isort.check": false,
     "search.exclude": {
         "**/__pycache__": true
     },
@@ -33,4 +27,26 @@
         "reportImplicitStringConcatenation": "warning"
     },
     "python.analysis.typeCheckingMode": "basic",
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "hellofastapi",
+            "database": "${workspaceFolder:helloFastAPI}/backend/data/db.sqlite"
+        },
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 10,
+            "server": "localhost",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "hellofastapi_mysql",
+            "socketPath": "/var/run/mysqld/mysqld.sock",
+            "database": "hellofastapi",
+            "username": "hellofastapi"
+        }
+    ],
 }
