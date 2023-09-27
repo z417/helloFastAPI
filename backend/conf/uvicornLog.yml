@@ -64,3 +64,13 @@ loggers:
       - console
     level: ERROR
     propagate: 0
+  # sqlalchemy.engine:
+  #   handlers:
+  #     - console
+  #   level: ERROR
+  #   propagate: 0
+  # sqlalchemy.pool:
+  #   handlers:
+  #     - console
+  #   level: ERROR
+  #   propagate: 0

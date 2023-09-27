@@ -12,27 +12,21 @@
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.formatOnSave": true,
     },
-    "python.analysis.autoImportCompletions": false,
-    "python.analysis.extraPaths": [],
     "search.exclude": {
         "**/__pycache__": true
     },
-    "python.analysis.completeFunctionParens": true,
-    "python.analysis.inlayHints.pytestParameters": true,
-    "python.languageServer": "Pylance",
+    "python.languageServer": "Default",
     "python.testing.pytestEnabled": true,
     "python.testing.pytestPath": "pytest",
-    "python.analysis.diagnosticSeverityOverrides": {
-        "reportUnboundVariable": "information",
-        "reportImplicitStringConcatenation": "warning"
-    },
-    "python.analysis.typeCheckingMode": "basic",
+    "ruff.args": ["--config=${workspaceFolder}/backend/pyproject.toml"],
+    "black-formatter.args": ["--config", "${workspaceFolder}/backend/pyproject.toml"],
+    "ruff.run": "onSave",
     "sqltools.connections": [
         {
             "previewLimit": 50,
             "driver": "SQLite",
             "name": "hellofastapi",
-            "database": "${workspaceFolder:helloFastAPI}/backend/data/db.sqlite"
+            "database": "${workspaceFolder:helloFastAPI}/backend/db.sqlite"
         },
         {
             "mysqlOptions": {
@@ -49,4 +43,5 @@
             "username": "hellofastapi"
         }
     ],
+    "sqltools.useNodeRuntime": true,
 }

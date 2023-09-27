@@ -1,163 +1,203 @@
 #!/usr/bin/env python3
 # coding=UTF-8
-'''
+"""
  * @Author       : Yuri
  * @Date         : 09/Apr/2023 16:32
  * @LastEditors  : Yuri
- * @LastEditTime : 05/Jun/2023 06:01
- * @FilePath     : /teach/helloFastAPI/backend/src/Auth/models.py
- * @Description  : db models
-'''
-from typing import ForwardRef, Optional
-from uuid import uuid4
+ * @LastEditTime : 25/Jun/2023 05:56
+ * @FilePath     : /helloFastAPI/backend/src/Auth/models.py
+ * @Description  : Auth module db models
+"""
+from json import dumps
+from re import match
+from typing import Optional
+from uuid import UUID, uuid4
 
-from ormar import (
-    UUID,
-    Date,
-    EncryptBackends,
-    ForeignKey,
-    Model,
-    SmallInteger,
-    String,
-    Text,
-    UniqueColumns,
-    property_field,
+from sqlalchemy import (
+    CHAR,
+    DATE,
+    SMALLINT,
+    TEXT,
+    VARCHAR,
+    TypeDecorator,
+    UniqueConstraint,
+    Uuid,
 )
-from pydantic import UUID4, EmailStr
-from src.Auth.types import _NameType
-from src.models import BaseMeta, DateFieldsMixins
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
 
-# create the forwardref to model "Users"
-UsersRef = ForwardRef("Users")
+from src.Auth.config import PWD_CONTEXT
+from src.common import CommonAttr
 
 
-class Users(Model, DateFieldsMixins):
-    class Meta(BaseMeta):
-        tablename = "users"
-        constraints = [UniqueColumns('email', 'is_deleted', name='emailxDel')]
-    uid: UUID4 = UUID(
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
+
+
+class PasswordT(TypeDecorator):
+    """
+    Allows storing and retrieving password hashes using passlib.context.CryptContext.
+    """
+
+    impl = CHAR(60)
+
+    def process_bind_param(self, value: str, dialect):
+        """
+        return its hash.
+        """
+        return PWD_CONTEXT.hash(value)
+
+    def process_result_value(self, value, dialect):
+        return value
+
+
+class User(Base, CommonAttr):
+    __tablename__ = "users"
+    __table_args__ = (UniqueConstraint("email", "is_deleted", name="emailxDel"),)
+
+    uid: Mapped[UUID] = mapped_column(
+        Uuid(native_uuid=True),
         primary_key=True,
-        default_factory=uuid4,
-        uuid_format="hex"
+        default=uuid4(),
     )
-    email: EmailStr = String(
+    email: Mapped[VARCHAR] = mapped_column(
+        VARCHAR(50),
         index=True,
-        max_length=50,
         nullable=False,
-        description='Email address',
-        example='user@example.com',
     )
-    password: str = String(
-        max_length=32,
-        min_length=8,
-        example='aB_1234567',
-        encrypt_secret='helloFastAPI',
-        encrypt_backend=EncryptBackends.FERNET,
-        name='passwd',
+
+    @validates("email")
+    def validate_email(self, key, addr):
+        # only support lowercase
+        if not match(r"^[a-z0-9]+([_\.][a-z0-9]+)*@([a-z0-9\-]+\.)+[a-z]{2,7}$", addr):
+            raise ValueError("failed on email validation")
+        return addr
+
+    password: Mapped[CHAR] = mapped_column(
+        "passwd",
+        PasswordT,
     )
-    admin: int = SmallInteger(
+
+    def verify_passwd(self, passwd) -> bool:
+        return PWD_CONTEXT.verify(passwd, self.password)
+
+    admin: Mapped[SMALLINT] = mapped_column(
+        SMALLINT,
         default=0,  # common user
-        minimum=0,  # 1 means administrator
-        maximum=2,  # guest
-        comment='0 common user,1 administrator, 2 guest'
+        comment="0 common user,1 administrator, 2 guest",
     )
-    first_name: _NameType = String(max_length=50)
-    last_name: _NameType = String(max_length=50)
-    birthday: Optional[Date] = Date(comment="user's birthday", nullable=True)
-    user_status: int = SmallInteger(
-        default=0,  # normal
-        minimum=0,  # 1 means abnormal
-        maximum=2,  # 2 locked
-        comment='0 normal,1 abnormal, 2 locked'
+    first_name: Mapped[VARCHAR] = mapped_column(VARCHAR(50))
+    last_name: Mapped[VARCHAR] = mapped_column(VARCHAR(50))
+    gender: Mapped[SMALLINT] = mapped_column(
+        SMALLINT,
+        default=2,  # unknow
+        comment="0 female,1 male, 2 unknow",
     )
-    avatar: Optional[Text] = Text(
+    birthday: Mapped[Optional[DATE]] = mapped_column(DATE, comment="user's birthday", nullable=True)
+    user_status: Mapped[SMALLINT] = mapped_column(SMALLINT, default=0, comment="0 normal,1 abnormal, 2 locked")
+    avatar: Mapped[Optional[TEXT]] = mapped_column(
+        TEXT,
         nullable=True,
-        description='base64 image encode',
-        example='data:image/png;base64,iVBORw0KGgoAAAAN..',
-        comment='user avatar, base64 encode',
+        comment="user avatar, base64 encode",
+        deferred=True,
     )
-    created_by: Optional[UsersRef] = ForeignKey(
-        UsersRef,
-        related_name='fk_self_uidxCre',
-    )
-    updated_by: Optional[UsersRef] = ForeignKey(
-        UsersRef,
-        related_name='fk_self_uidxUpd',
-    )
-    is_deleted: int = SmallInteger(
-        default=0,  # "Not deleted" of logical
-        minimum=0,
-        maximum=1,  # "Deleted" of logical
-        comment='0 "Not deleted", 1 "Deleted"'
-    )
-    frequency_max: int = 600  # pydantic only fields, will not be stored in db
 
-    @property_field
+    @hybrid_property
     def full_name(self) -> str:
-        '''
-        1. only available in the response from fastapi and dict() and json() methods
-        2. cannot pass a value for this field in the request
-        '''
-        return f'{self.first_name} {self.last_name}'
+        return f"{self.first_name} {self.last_name}"
+
+    def __repr__(self) -> str:
+        return dumps({"email": self.email, "full_name": self.full_name, "user_status": self.user_status})
 
 
-Users.update_forward_refs()
+if __name__ == "__main__":
+    """Usage example"""
+    import asyncio
+    from contextlib import asynccontextmanager
+    from typing import AsyncContextManager
 
+    from sqlalchemy.ext.asyncio import AsyncEngine
+    from sqlalchemy.ext.asyncio.session import AsyncSession
 
-if __name__ == '__main__':
-    # print(Users.Meta.model_fields)
-    print(Users.Meta.table.columns.keys())
+    async def create_engine() -> AsyncEngine:
+        from sqlalchemy.ext.asyncio import create_async_engine
 
-    from asyncio import run, sleep
+        from src.settings import settings
 
-    from sqlalchemy.ext.asyncio import create_async_engine
+        return create_async_engine(
+            str(settings.DB_URL),
+            **settings.ENGINE_ARGS,
+        )
 
-    async def create_table():
-        engine = create_async_engine("sqlite+aiosqlite:///data/db.sqlite")
-        async with engine.begin() as conn:
-            await conn.run_sync(Users.Meta.table.drop, checkfirst=True)
-            await conn.run_sync(Users.Meta.table.create, checkfirst=True)
+    async def create_table(engine: AsyncEngine, drop_first=False) -> None:
+        async with engine.connect() as conn:
+            if drop_first:
+                await conn.run_sync(User.metadata.drop_all, checkfirst=True)
+            await conn.run_sync(User.metadata.create_all, checkfirst=True)
 
-    async def insert_data(user: Users):
-        print(user.dict())
-        await user.save()
+    @asynccontextmanager
+    async def create_session(engine: AsyncEngine) -> AsyncContextManager[AsyncSession]:
+        s = AsyncSession(engine)
+        try:
+            yield s
+        finally:
+            await s.close()
 
-    async def upsert_data(user: Users):
-        await sleep(5)
-        await user.upsert(first_name=f'{user.first_name}+update', updated_by=user.uid)
-        print(user.json())
+    async def insert_demo(session: AsyncSession) -> None:
+        admin_uid = uuid4()
+        admin_info = {
+            "uid": admin_uid,
+            "email": "admin@z417.top",
+            "password": "admin12345",
+            "admin": 1,
+            "first_name": "admin",
+            "last_name": "admin",
+        }
+        admin = User(**admin_info)
+        common_user_info = {
+            "email": "common@hzn.com",
+            "password": "common12345",
+            "first_name": "common",
+            "last_name": "common",
+            "created_by": admin_uid,
+            "updated_by": admin_uid,
+        }
+        common_user = User(**common_user_info)
+        session.add_all([admin, common_user])
+        await session.commit()
 
-    admin_uid = uuid4().hex
-    admin_info = {
-        "uid": admin_uid,
-        "email": "admin@z417.top",
-        "password": "admin12345",
-        "admin": 1,
-        "first_name": "ADMIN",
-        "last_name": "adMin",
-        "birthday": "1990-02-04",
-        "user_status": 0,
-        "avatar": "about:blank",
-        # "created_at": "1605854050000",
-        # "updated_at": "1605854050000",
-        "created_by": admin_uid,
-        "updated_by": admin_uid,
-        "is_deleted": 0
-    }
-    admin = Users(**admin_info)
-    run(create_table())
-    run(insert_data(admin))
-    run(upsert_data(admin))
+    async def select_demo(session: AsyncSession) -> User:
+        from sqlalchemy import select
 
-    tester_info = {
-        "email": "tester@z417.top",
-        "password": "admin12345",
-        "first_name": "tester",
-        "last_name": "test",
-        # "birthday": "1990-01-09",
-        # "avatar": "about:blank",
-    }
-    tester = Users(**tester_info, created_by=admin.uid,
-                   updated_by=admin.uid)
-    run(insert_data(tester))
-    run(upsert_data(tester))
+        stmt = select(User).where(User.first_name == "common", User.is_deleted == 0)
+        pick_user: User = (await session.execute(stmt)).scalar_one_or_none()
+        print(pick_user)
+        print((await pick_user.awaitable_attrs.password))
+        return pick_user
+
+    async def update_demo(session: AsyncSession, u: User) -> None:
+        from sqlalchemy import update
+
+        # update 1
+        u.password = "common54321"
+        await session.flush()
+        await session.refresh(u)
+        print(u.verify_passwd("common12345"))
+        print(u.verify_passwd("common54321"))
+        # update 2
+        stmt = update(User).where(User.first_name == "common").values(gender=1).execution_options(synchronize_session="auto")
+        up_user = await session.execute(stmt)
+        print(up_user.rowcount)
+        await session.commit()
+
+    async def test_models():
+        engine = await create_engine()
+        await create_table(engine, True)
+        async with create_session(engine) as session:
+            await insert_demo(session)
+            pick_user = await select_demo(session)
+            await update_demo(session, pick_user)
+        await engine.dispose()
+
+    asyncio.run(test_models())

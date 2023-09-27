@@ -47,9 +47,7 @@ class Settings:
     ENABLE_API_DOCS: bool = config("ENABLE_API_DOCS", cast=bool, default=False)
     UVICORN_HOST: str = config("UVICORN_HOST", cast=str, default="127.0.0.1")
     UVICORN_PORT: int = config("UVICORN_PORT", cast=int, default=8000)
-    UVICORN_LOG_CONFIG: str = config(
-        "UVICORN_LOG_CONFIG", cast=str, default="conf/uvicornLog.yml"
-    )
+    UVICORN_LOG_CONFIG: str = config("UVICORN_LOG_CONFIG", cast=str, default="conf/uvicornLog.yml")
     UVICORN_LOG_LEVEL: str = config("UVICORN_LOG_LEVEL", cast=str.lower, default="info")
     UVICORN_RELOAD: bool = config("UVICORN_RELOAD", cast=bool, default=False)
     UVICORN_SSL_KEYFILE: str = config("UVICORN_SSL_KEYFILE", cast=str, default="")

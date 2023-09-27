@@ -6,10 +6,9 @@
  * @LastEditors: z417
  * @LastEditTime: 2020-11-16 11:12:50
  * @FilePath: /helloFastAPI/backend/src/tools/logs.py
- * @Description: logging mudule
+ * @Description: logging module
 """
 from logging import Logger, config, getLogger
-from pathlib import Path
 
 from src.settings import settings
 
@@ -48,10 +47,10 @@ class Log:
                 "encoding": "utf-8",
             },
         },
-        "root": {
-            "level": "INFO",
-            "handlers": ["console"],
-        },
+        # "root": {
+        #     "level": "INFO",
+        #     "handlers": ["console"],
+        # },
         "loggers": {
             settings.APP_NAME: {
                 "level": settings.APP_LOG_LEVEL.upper(),  # DEBUG > INFO > WARNING > ERROR > CRITICAL
@@ -71,20 +70,20 @@ class Log:
             self.__config()
         except ValueError as e:
             if isinstance(e.__cause__, FileNotFoundError):
-                Path(e.__cause__.filename).parent.mkdir()
-                print(f"+++++{Path(e.__cause__.filename).parent} was maked+++++")
                 try:
-                    self.__config()
+                    self.__config(False, e.__cause__.filename)
                 except (ValueError, TypeError, AttributeError, ImportError) as m_e:
                     result = f"{type(m_e)}: {m_e}"
         finally:
             print(f"-----{result}-----")
 
-    def __config(self):
-        try:
-            config.dictConfig(self.__app_logging_config)
-        except ValueError as e:
-            raise e
+    def __config(self, file_found=True, filename=""):
+        if not file_found:
+            from pathlib import Path
+
+            Path(filename).parent.mkdir()
+            print(f"+++++{Path(filename).parent} was maked+++++")
+        config.dictConfig(self.__app_logging_config)
         self.__logger__ = getLogger(self.name)
 
     @property

@@ -5,7 +5,16 @@ requires-python = ">=3.8"
 # https://beta.ruff.rs/docs/settings/
 [tool.ruff]
 # 1. Avoid enforcing line-length violations (`E501`)
-ignore = ["E501"]
+# ignore = ["E501"]
+line-length = 160
+
+# 1. A list of file patterns to omit from linting, in addition to those specified by exclude.
+extend-exclude = ["tests", "**/python3.*/**/*.py"]
+
+namespace-packages = ["backend/src"]
+
+# Allow imports relative to the "src" and "test" directories.
+src = ["src", "tests"]
 
 [tool.ruff.pydocstyle]
 convention = "google"
@@ -13,3 +22,14 @@ convention = "google"
 # https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html
 [tool.black]
 line-length = 160
+
+[tool.ruff.flake8-annotations]
+ignore-fully-untyped = true
+
+[tool.ruff.isort]
+case-sensitive = true
+classes = ["SVC"]
+combine-as-imports = true
+
+[tool.ruff.pylint]
+max-args = 5

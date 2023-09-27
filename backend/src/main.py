@@ -5,15 +5,14 @@
  * @Date         : 09/Apr/2023 10:03
  * @LastEditors  : Yuri
  * @LastEditTime : 25/Aug/2023 14:14
- * @FilePath     : /helloFastAPI/backend/src/__main__.py
+ * @FilePath     : /helloFastAPI/backend/src/main.py
  * @Description  : file desc
 """
 from fastapi import FastAPI
 from uvicorn import run
 
 from src.appInit import AppInit
-from src.common.exceptions import APIException, http_exception_handler
-from src.middlewares import dbEngine
+from src.common import APIException, http_exception_handler
 from src.settings import settings
 from src.tools import L
 
@@ -24,7 +23,6 @@ async def start_event() -> None:
 
 async def shutdown_event() -> None:
     L.info(msg="Server shutdown")
-    await dbEngine.asyncDbengine.dispose()
 
 
 def create_app() -> FastAPI:

@@ -8,59 +8,76 @@
  * @FilePath     : /helloFastAPI/backend/src/common/models.py
  * @Description  : common models
 """
-from datetime import date, datetime
-from typing import Generic, Optional, TypeVar
+from typing import Optional
+from uuid import UUID
 
-from pydantic import BaseModel as PydanticBaseModel
-from sqlalchemy import TIMESTAMP, SmallInteger, func
-from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import SMALLINT, TIMESTAMP, ForeignKey, func
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 
 
-def camel(snake_case: str) -> str:
-    words = snake_case.split("_")
-    return f'{words[0]}{"".join(word.capitalize() for word in words[1:])}'
+class CommonAttr:
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
 
+    @declared_attr
+    def created_by(cls) -> Mapped[Optional[UUID]]:
+        return mapped_column(
+            ForeignKey(
+                "users.uid",
+                name=f"fk_{cls.__tablename__}.created_by_on_users.uid",
+            ),
+            comment="creator",
+        )
 
-class Base(AsyncAttrs, DeclarativeBase):
-    type_annotation_map = {
-        datetime: TIMESTAMP(timezone=True),
-        date: TIMESTAMP(timezone=True),
-    }
-    created_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(),
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
-    is_deleted: Mapped[int] = mapped_column(
-        SmallInteger,
-        default=0,  # "Not deleted" of logical
-        comment='0 "Not deleted", 1 "Deleted"',
-    )
+    @declared_attr
+    def updated_by(cls) -> Mapped[Optional[UUID]]:
+        return mapped_column(
+            ForeignKey(
+                "users.uid",
+                name=f"fk_{cls.__tablename__}.updated_by_on_users.uid",
+            ),
+            comment="updator",
+        )
 
+    @declared_attr
+    def created_at(cls) -> Mapped[TIMESTAMP]:
+        return mapped_column(
+            TIMESTAMP(timezone=True),
+            server_default=func.now(),
+        )
 
-class BaseModel(PydanticBaseModel):
-    class Config:
-        # alias_generator = camel  # disabled by swagger Authorize not work
-        # allow_population_by_field_name = True
-        from_attributes = True
+    @declared_attr
+    def updated_at(cls) -> Mapped[TIMESTAMP]:
+        return mapped_column(
+            TIMESTAMP(timezone=True),
+            server_default=func.now(),
+            onupdate=func.now(),
+        )
 
-
-DataT = TypeVar("DataT")
-
-
-class ResponseModel(PydanticBaseModel, Generic[DataT]):
-    data: Optional[DataT]
-    status: int = 1
-    errCode: int = 200
+    @declared_attr
+    def is_deleted(cls) -> Mapped[SMALLINT]:
+        return mapped_column(
+            SMALLINT,
+            default=0,  # "Not deleted" of logical
+            comment='0 "Not deleted", 1 "Deleted"',
+        )
 
 
 if __name__ == "__main__":
+    """Usage example"""
+    from sqlalchemy.ext.asyncio import AsyncAttrs
+    from sqlalchemy.orm import DeclarativeBase
 
-    class TestModel(BaseModel):
-        error_code: int = 200
-        error_msg: str = "success"
+    class Base(AsyncAttrs, DeclarativeBase):
+        pass
 
-    print(TestModel(**{"error_code": 301, "error_msg": "balabala"}).model_dump_json())
+    class User(Base, CommonAttr):
+        __tablename__ = "users"
+        uid: Mapped[UUID] = mapped_column(
+            primary_key=True,
+        )
+
+    from sqlalchemy.schema import CreateTable
+
+    print(CreateTable(User.__table__))
