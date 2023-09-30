@@ -9,6 +9,7 @@
  * @Description: logging module
 """
 from logging import Logger, config, getLogger
+from typing import Dict, Final
 
 from src.settings import settings
 
@@ -16,7 +17,7 @@ from src.settings import settings
 class Log:
     """Logger util"""
 
-    __app_logging_config: dict = {
+    __app_logging_config: Final[Dict] = {
         # https://docs.python.org/3/library/logging.config.html
         "version": 1,  # The only valid value at present is 1
         "disable_existing_loggers": False,

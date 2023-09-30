@@ -59,7 +59,7 @@ class User(Base, CommonAttr):
     uid: Mapped[UUID] = mapped_column(
         Uuid(native_uuid=True),
         primary_key=True,
-        default=uuid4(),
+        default=uuid4,
     )
     email: Mapped[VARCHAR] = mapped_column(
         VARCHAR(50),
@@ -100,7 +100,6 @@ class User(Base, CommonAttr):
         TEXT,
         nullable=True,
         comment="user avatar, base64 encode",
-        deferred=True,
     )
 
     @hybrid_property
@@ -145,9 +144,7 @@ if __name__ == "__main__":
             await s.close()
 
     async def insert_demo(session: AsyncSession) -> None:
-        admin_uid = uuid4()
         admin_info = {
-            "uid": admin_uid,
             "email": "admin@z417.top",
             "password": "admin12345",
             "admin": 1,
@@ -160,8 +157,6 @@ if __name__ == "__main__":
             "password": "common12345",
             "first_name": "common",
             "last_name": "common",
-            "created_by": admin_uid,
-            "updated_by": admin_uid,
         }
         common_user = User(**common_user_info)
         session.add_all([admin, common_user])
@@ -173,7 +168,7 @@ if __name__ == "__main__":
         stmt = select(User).where(User.first_name == "common", User.is_deleted == 0)
         pick_user: User = (await session.execute(stmt)).scalar_one_or_none()
         print(pick_user)
-        print((await pick_user.awaitable_attrs.password))
+        print(await pick_user.awaitable_attrs.password)
         return pick_user
 
     async def update_demo(session: AsyncSession, u: User) -> None:

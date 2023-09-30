@@ -1,143 +1,122 @@
 #!/usr/bin/env python3
 # coding=UTF-8
-'''
+"""
  * @Author       : Yuri
  * @Date         : 27/Apr/2023 06:34
  * @LastEditors  : Yuri
- * @LastEditTime : 05/Jun/2023 08:18
- * @FilePath     : /teach/helloFastAPI/backend/src/Auth/dependencies.py
+ * @LastEditTime : 25/Aug/2023 16:32
+ * @FilePath     : /helloFastAPI/backend/src/Auth/dependencies.py
  * @Description  : verify the data conforms to database constraints
-'''
+"""
 from datetime import datetime, timedelta
-from typing import Mapping, Optional, Tuple, Union
+from typing import Mapping, Tuple, Union
 
 from cacheout import LFUCache
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import ExpiredSignatureError, JWTError, jwt
+
 from src.Auth.config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
     DEFAULT_TOKEN_EXPIRE_MINUTES,
-    PWD_CONTEXT,
+    FLAG_USER_STATUS_LOCKED,
+    PARSE_JWT_COUNT_PER_MINUTE,
     REFRESH_TOKEN_EXPIRE_MINUTES,
     SECRET_KEY,
     TOKEN_URL,
 )
-from src.Auth.models import Users
-from src.exceptions import BadRequestException
+from src.Auth.crud import get_user_by_email
+from src.Auth.models import User
+from src.common import BadRequestException, get_async_session
 
 cache = LFUCache()
 
 
-async def create_token(
-        data: dict,
-        expires_delta: Union[timedelta, None] = None
-) -> Tuple[str, dict]:
+async def create_token(data: dict, expires_delta: Union[timedelta, None] = None) -> Tuple[str, dict]:
     to_encode = data.copy()
     current_timestamp = datetime.utcnow()
     if expires_delta:
         expire = current_timestamp + expires_delta
     else:
-        expire = current_timestamp + \
-            timedelta(minutes=DEFAULT_TOKEN_EXPIRE_MINUTES)
-    to_encode.update(
-        {'exp': expire, 'iat': current_timestamp, 'scope': 'access_token'})
+        expire = current_timestamp + timedelta(minutes=DEFAULT_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire, "iat": current_timestamp, "scope": "access_token"})
     access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return access_token, to_encode
 
 
 async def create_refresh_token(data: dict) -> str:
-    exp = data['exp']
-    data.update({
-        'exp': datetime.fromtimestamp(exp) + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES),
-        'scope': 'refresh_token'})
+    exp = data["exp"]
+    data.update(
+        {
+            "exp": datetime.fromtimestamp(exp) + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES),
+            "scope": "refresh_token",
+        }
+    )
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
 
-async def renew_token_via_refresh(refresh_token: str) -> str:
+async def renew_token_via_refresh(refresh_token: str) -> Union[str, HTTPException]:
     try:
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload['scope'] != 'refresh_token':
+        if payload["scope"] != "refresh_token":
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid scope for token')
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token")
-    except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Refresh token expired')
-    new_token = (await create_token(payload, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)))[0]
-    return new_token
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid scope for token",
+            )
+    except JWTError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token") from e
+    except ExpiredSignatureError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired") from e
+    return (await create_token(payload, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)))[0]
 
 
 async def parse_jwt_data(
-    token: str = Depends(OAuth2PasswordBearer(tokenUrl=TOKEN_URL))
-) -> Mapping:
+    token: str = Depends(OAuth2PasswordBearer(tokenUrl=TOKEN_URL)),
+) -> Union[Mapping, HTTPException]:
     # Limit interface invocation frequency per user per minute
     num = cache.get(token)
-    cache.set(token, num+1 if num else 1, ttl=1*60)
-    if cache.get(token) > 60:  # Plan to use Users.frequency_max
+    cache.set(token, num + 1 if num else 1, ttl=1 * 60)
+    if cache.get(token) > PARSE_JWT_COUNT_PER_MINUTE:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many requests",
-            headers={'Authenticate': f"Bearer {token}"}
+            headers={"Authenticate": f"Bearer {token}"},
         )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token")
-    except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Token expired')
+    except JWTError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from e
+    except ExpiredSignatureError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired") from e
     return payload
 
 
-async def get_user_from_db(users: Users = Depends(), *args, **kw) -> Optional[Users]:
-    return await Users.objects.get_or_none(*args, **kw, is_deleted=0)
+async def authenticate_user(
+    form_data=Depends(OAuth2PasswordRequestForm),
+    session=Depends(get_async_session),
+) -> Union[User, HTTPException, BadRequestException]:
+    user: Union[User, None] = (await get_user_by_email(session, form_data.username)).scalar_one_or_none()
+    if user and user.verify_passwd(form_data.password):
+        if user.user_status == FLAG_USER_STATUS_LOCKED:
+            raise HTTPException(status_code=status.HTTP_423_LOCKED, detail="Your account is locked")
+        return user
+    raise BadRequestException("Incorrect username or password")
 
 
-async def get_passwd_hash(passwd: str) -> str:
-    '''have not used yet, cause ORM model provided this feature'''
-    return PWD_CONTEXT.hash(passwd)
-
-
-async def verify_passwd(plain_passwd, hashed_passwd) -> bool:
-    '''have not used yet, cause ORM model provided this feature'''
-    return PWD_CONTEXT.verify(plain_passwd, hashed_passwd)
-
-
-async def authenticate_user_in_db(user_name: str, passwd: str) -> Users:
-    q_user = await get_user_from_db(email__icontains=user_name)
-    if not q_user or q_user.password != passwd:
-        # raise HTTPException(
-        #     status_code=status.HTTP_400_BAD_REQUEST,
-        #     detail='Incorrect userName or password'
-        # )
-        raise BadRequestException('Incorrect userName or password')
-    if q_user.user_status == 2:
-        raise HTTPException(
-            status_code=status.HTTP_423_LOCKED,
-            detail='Your account is locked'
-        )
-    return q_user
-
-
-async def get_current_user(payload: dict = Depends(parse_jwt_data)) -> Users:
+async def get_current_user(
+    payload: dict = Depends(parse_jwt_data),
+    session=Depends(get_async_session),
+) -> Union[User, HTTPException]:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"Authenticate": "Bearer"},
     )
-    user_email = payload.get('sub')
-    if not user_email:
+    email = payload.get("sub")
+    if not email:
         raise credentials_exception
-    user = await get_user_from_db(email__icontains=user_email)
-    if not user:
+    user: Union[User, None] = (await get_user_by_email(session, email)).scalar_one_or_none()
+    if not user or user.user_status == FLAG_USER_STATUS_LOCKED:
         raise credentials_exception
     return user

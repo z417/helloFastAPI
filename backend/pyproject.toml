@@ -4,27 +4,53 @@ requires-python = ">=3.8"
 
 # https://beta.ruff.rs/docs/settings/
 [tool.ruff]
+select = [
+  "A",   # prevent using keywords that clobber python builtins
+  "B",   # bugbear: security warnings
+  "E",   # pycodestyle
+  "F",   # pyflakes
+  "I",   # isort
+  "ARG", # flake8-unused-arguments
+  "ISC", # implicit string concatenation
+  "ICN", # flake8-import-conventions
+  "PL",  # pylint
+  "UP",  # alert you when better syntax is available in your python version
+  "RUF", # the ruff developer's own rules
+  "RET", # flake8-return
+]
 # 1. Avoid enforcing line-length violations (`E501`)
-# ignore = ["E501"]
+ignore = [
+  "B008",  # do not perform function calls in argument defaults
+]
 line-length = 160
 
-# 1. A list of file patterns to omit from linting, in addition to those specified by exclude.
-extend-exclude = ["tests", "**/python3.*/**/*.py"]
+# 2. A list of file patterns to omit from linting, in addition to those specified by exclude.
+extend-exclude = [
+  "./backend/tests",
+  "**/python3.*"
+]
 
 namespace-packages = ["backend/src"]
 
-# Allow imports relative to the "src" and "test" directories.
+# 3. Allow imports relative to the "src" and "test" directories.
 src = ["src", "tests"]
-
-[tool.ruff.pydocstyle]
-convention = "google"
 
 # https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html
 [tool.black]
 line-length = 160
+target-version = ["py38", "py39", "py310"]
+exclude = '''
+(
+    | .git
+    | .venv
+    | build
+    | dist
+)
+'''
 
 [tool.ruff.flake8-annotations]
-ignore-fully-untyped = true
+ignore-fully-untyped = false
+mypy-init-return = true
 
 [tool.ruff.isort]
 case-sensitive = true
@@ -33,3 +59,26 @@ combine-as-imports = true
 
 [tool.ruff.pylint]
 max-args = 5
+
+[tool.mypy]
+python_version = "3.8"
+strict = true
+show_error_codes = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+# You can disable imports or control per-module/file settings here
+[[tool.mypy.overrides]]
+module = [
+  "fastapi",
+  "sqlalchemy",
+  "starlette",
+  "httpx",
+  "pytest"
+]
+warn_return_any = false
+ignore_missing_imports = true
+disallow_untyped_defs = false

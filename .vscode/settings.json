@@ -44,4 +44,7 @@
         }
     ],
     "sqltools.useNodeRuntime": true,
+    "mypy-type-checker.args": [
+        "--config-file=${workspaceFolder}/backend/pyproject.toml"
+    ],
 }

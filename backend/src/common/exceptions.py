@@ -25,7 +25,7 @@ class APIException(Exception):
         self.status_code = status_code
         self.message = message
         self.error_id = error_id
-        self.headers = headers
+        self.headers = headers or {}
 
     def __repr__(self) -> str:
         class_name = self.__class__.__name__

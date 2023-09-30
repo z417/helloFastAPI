@@ -8,7 +8,7 @@
  * @FilePath     : /helloFastAPI/backend/src/Auth/__init__.py
  * @Description  : file desc
 """
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 from src.Auth.models import User
 from src.Auth.router import router as auth_router

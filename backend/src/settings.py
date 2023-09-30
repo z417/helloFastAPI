@@ -29,12 +29,12 @@ class Settings:
     APP_VERSION: str = config("APP_VERSION", default="0.0.1")
     APP_TITLE: str = config("APP_TITLE", default="Hello FastApi")
     APP_DESC: str = config("APP_DESC", default="A demo for fastapi")
-    APP_LICENSE: dict = config(
+    APP_LICENSE = config(
         "APP_LICENSE",
         cast=loads,
         default='{"name": "LGPL-3.0", "url": "https://www.gnu.org/licenses/gpl-3.0.txt"}',
     )
-    APP_CONTACT: dict = config(
+    APP_CONTACT = config(
         "APP_CONTACT",
         cast=loads,
         default='{"name": "HZN", "url": "https://www.haozhinuo.com", "email": "zhongtuo@haozhinuo.com"}',
