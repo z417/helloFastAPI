@@ -52,7 +52,7 @@ class Settings:
     UVICORN_RELOAD: bool = config("UVICORN_RELOAD", cast=bool, default=False)
     UVICORN_SSL_KEYFILE: str = config("UVICORN_SSL_KEYFILE", cast=str, default="")
     UVICORN_SSL_CERTFILE: str = config("UVICORN_SSL_CERTFILE", cast=str, default="")
-    DB_URL = config("DB_URL", cast=Secret, default="sqlite+aiosqlite:///:memory:")
+    DB_URL = config("DB_URL", cast=Secret, default="sqlite+aiosqlite:///db.sqlite")
     ENGINE_ARGS = config("ENGINE_ARGS", cast=loads, default='{"future": true}')
 
 

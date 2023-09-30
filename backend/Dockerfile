@@ -18,5 +18,5 @@ RUN if [ $PIP_MIRROR = 1 ]; then \
     && echo $BACKEND_HOME > ~/.local/lib/python3.9/site-packages/mydefine.pth
 
 EXPOSE 8000
-CMD ["python", "src"]
+CMD ["python", "src/main.py"]
 # CMD ["uvicorn", "--env-file $ENV_FILE", "src:app"]
