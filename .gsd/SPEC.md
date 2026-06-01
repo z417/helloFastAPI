@@ -23,12 +23,12 @@ erDiagram
         UUID uid PK
         VARCHAR(50) email UK
         CHAR(60) passwd
-        SMALLINT admin 0
+        SMALLINT admin
         VARCHAR(50) first_name
         VARCHAR(50) last_name
-        SMALLINT gender 2
+        SMALLINT gender
         DATE birthday
-        SMALLINT user_status 0
+        SMALLINT user_status
         TEXT avatar
         VARCHAR(100) current_session_id
     }
@@ -36,7 +36,7 @@ erDiagram
         UUID uid PK
         VARCHAR(100) title
         INT duration
-        DECIMAL(3, 1) rating
+        DECIMAL rating
         VARCHAR(100) genres
         VARCHAR(500) summary
     }
@@ -49,8 +49,8 @@ erDiagram
         UUID uid PK
         UUID movie_id FK
         UUID room_id FK
-        TIMESTAMP(timezone=True) start_time
-        DECIMAL(10, 2) price
+        TIMESTAMP start_time
+        DECIMAL price
         INT remaining_inventory
         INT version
     }
@@ -67,8 +67,8 @@ erDiagram
         UUID showtime_id FK
         UUID user_id FK
         UUID seat_id FK
-        DECIMAL(10, 2) amount
-        SMALLINT status 1
+        DECIMAL amount
+        SMALLINT status
     }
 ```
 
