@@ -21,37 +21,45 @@ erDiagram
     
     User {
         UUID uid PK
-        string email UK
-        string passwd
-        int admin
-        string current_session_id
+        VARCHAR(50) email UK
+        CHAR(60) passwd
+        SMALLINT admin 0
+        VARCHAR(50) first_name
+        VARCHAR(50) last_name
+        SMALLINT gender 2
+        DATE birthday
+        SMALLINT user_status 0
+        TEXT avatar
+        VARCHAR(100) current_session_id
     }
     Movie {
         UUID uid PK
-        string title
-        int duration
-        decimal rating
+        VARCHAR(100) title
+        INT duration
+        DECIMAL(3, 1) rating
+        VARCHAR(100) genres
+        VARCHAR(500) summary
     }
     CinemaRoom {
         UUID uid PK
-        string name
-        int total_seats
+        VARCHAR(50) name
+        INT total_seats
     }
     Showtime {
         UUID uid PK
         UUID movie_id FK
         UUID room_id FK
-        datetime start_time
-        decimal price
-        int remaining_inventory
-        int version
+        TIMESTAMP(timezone=True) start_time
+        DECIMAL(10, 2) price
+        INT remaining_inventory
+        INT version
     }
     Seat {
         UUID uid PK
         UUID showtime_id FK
-        int row_num
-        int col_num
-        int status
+        INT row_num
+        INT col_num
+        INT status
         UUID sold_to_user FK
     }
     TicketOrder {
@@ -59,8 +67,8 @@ erDiagram
         UUID showtime_id FK
         UUID user_id FK
         UUID seat_id FK
-        decimal amount
-        int status
+        DECIMAL(10, 2) amount
+        SMALLINT status 1
     }
 ```
 

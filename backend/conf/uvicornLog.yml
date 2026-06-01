@@ -1,9 +1,3 @@
- # @Author       : Yuri
- # @Date         : 26/Aug/2023 11:54
- # @LastEditors  : Yuri
- # @LastEditTime : 26/Aug/2023 11:54
- # @FilePath     : /helloFastAPI/backend/conf/uvicornLog.yml
- # @Description  : https://docs.python.org/3/library/logging.config.html
 version: 1
 disable_existing_loggers: false
 # below refer package: uvicorn.config.LOGGING_CONFIG
