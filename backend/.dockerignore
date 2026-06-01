@@ -1,0 +1,21 @@
+# 默认忽略所有文件以保持构建上下文纯净
+*
+
+# 允许复制构建所需的核心依赖定义文件与锁文件 (极度关键，防止 COPY 报错)
+!pyproject.toml
+!uv.lock
+
+# 允许复制核心业务代码、配置文件与预装数据库
+!src
+!conf
+!*.env
+!db.sqlite
+
+# 排除本地运行时产生的虚拟环境、缓存与临时日志文件
+**/.git
+**/.venv
+**/.pytest_cache
+**/.ruff_cache
+**/__pycache__
+**/*.pyc
+**/*.log

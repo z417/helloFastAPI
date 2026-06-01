@@ -1,0 +1,169 @@
+Starry Cinema 星空影城在线票务性能靶场
+Educational Non-Commercial License (ENCL) v1.0
+
+Copyright (c) 2024-2026, z417 / Yuri. All rights reserved.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PREAMBLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This Software ("Starry Cinema 星空影城在线票务性能靶场", including all
+associated source code, documentation, configuration files, and assets,
+hereinafter "the Software") is the exclusive intellectual property of
+the copyright holder named above.
+
+The Software is designed and distributed exclusively as an educational
+high-concurrency performance testing demonstration platform. Any use
+beyond the explicit permissions granted herein is strictly prohibited.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARTICLE 1 — GRANT OF LIMITED LICENSE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Subject to the terms and conditions of this License, the copyright
+holder hereby grants you a limited, non-exclusive, non-transferable,
+non-sublicensable, revocable license to:
+
+  (a) Download, install, and run the Software solely for personal
+      learning, academic research, or internal technical education
+      purposes;
+
+  (b) Study and read the source code to understand its architecture,
+      design patterns, and implementation techniques;
+
+  (c) Modify the source code for the sole purpose of non-commercial
+      experimentation, bug reporting, or academic coursework;
+
+  (d) Share unmodified copies of the Software with other individuals
+      for the same non-commercial educational purposes, provided this
+      License is included in its entirety and unmodified.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARTICLE 2 — MANDATORY CONDITIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Any use, modification, or distribution of the Software is subject to
+ALL of the following conditions:
+
+  2.1  ATTRIBUTION REQUIRED
+       All copies, derivative works, or publications that incorporate
+       or reference the Software must include a clearly visible
+       attribution:
+         "Starry Cinema Performance Testing Platform — Copyright (c)
+          2024-2026, z417 / Yuri. Licensed under ENCL v1.0."
+
+  2.2  LICENSE PRESERVATION
+       This License text must be preserved in its entirety in all
+       copies or substantial portions of the Software. You may not
+       remove, alter, obscure, or replace any copyright notice,
+       trademark, or license declaration contained herein.
+
+  2.3  DERIVATIVE WORKS DISCLOSURE
+       If you distribute derivative works, you must: (i) clearly
+       identify that the work is derived from this Software;
+       (ii) release the complete source code of your modifications
+       under the same license terms; and (iii) document all changes
+       in a CHANGES file included with the distribution.
+
+  2.4  NO SUBLICENSING
+       You may not grant sublicenses, franchises, or any other form
+       of usage rights to third parties beyond what this License
+       explicitly permits. Any attempted sublicense is void.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARTICLE 3 — PROHIBITED USES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The following uses are STRICTLY PROHIBITED without prior written
+authorization from the copyright holder:
+
+  3.1  COMMERCIAL USE
+       You may not use, sell, license, lease, rent, or otherwise
+       exploit the Software or any derivative work for any commercial
+       purpose, including but not limited to: fee-based SaaS services,
+       commercial training materials, paid consulting, or integration
+       into commercial products.
+
+  3.2  PRODUCTION DEPLOYMENT
+       You may not deploy this Software in any production environment
+       that serves real end-users in an operational context, regardless
+       of whether a fee is charged. Permitted environments are limited
+       to: local developer machines, air-gapped academic labs, and
+       controlled internal benchmarking environments.
+
+  3.3  BRAND EXPLOITATION
+       You may not use the name "Starry Cinema", "星空影城", "星穹影城",
+       or the names of the copyright holders to endorse, promote, or
+       market any product, service, or derivative work without express
+       prior written consent.
+
+  3.4  OBFUSCATION & DRM
+       You may not apply technical measures to circumvent, restrict,
+       or obfuscate the freedoms granted by this License, including
+       but not limited to applying Digital Rights Management (DRM)
+       mechanisms to the Software or its derivatives.
+
+  3.5  PATENT WEAPONIZATION
+       You may not initiate patent litigation against any party alleging
+       that the Software or any contribution embodied within it
+       infringes any patent or intellectual property right.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARTICLE 4 — TERMINATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  4.1  This License is effective until terminated. Your rights under
+       this License will terminate automatically, without notice, if
+       you fail to comply with any term herein.
+
+  4.2  Upon termination, you must immediately cease all use and
+       distribution of the Software and destroy all copies in your
+       possession or control.
+
+  4.3  Sections 2 (Conditions), 3 (Prohibited Uses), 5 (Disclaimer),
+       and 6 (Limitation of Liability) survive termination of this
+       License.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARTICLE 5 — DISCLAIMER OF WARRANTIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+THE SOFTWARE IS PROVIDED "AS IS" FOR EDUCATIONAL AND DEMONSTRATION
+PURPOSES ONLY, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, OR NON-INFRINGEMENT.
+
+THE COPYRIGHT HOLDER DOES NOT WARRANT THAT THE SOFTWARE IS FREE OF
+DEFECTS, SECURE, OR FIT FOR ANY SPECIFIC PURPOSE. YOU ASSUME ALL
+RISKS ASSOCIATED WITH YOUR USE OF THE SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARTICLE 6 — LIMITATION OF LIABILITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL
+THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING BUT NOT LIMITED TO PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARTICLE 7 — COMMERCIAL LICENSING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If you wish to use the Software for commercial purposes, production
+deployment, or any use not permitted by this License, you must obtain
+a separate commercial license from the copyright holder.
+
+For commercial licensing inquiries, contact the author directly via
+the project repository.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+END OF LICENSE
+
+SPDX-License-Identifier: LicenseRef-ENCL-1.0-NonCommercial

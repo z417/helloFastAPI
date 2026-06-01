@@ -1,0 +1,12 @@
+**/.DS_Store
+**/logs
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.python-version
+**/.idea
+**/*.png
+**/.env
+**/data
+**/*.sqlite
+**/dist
