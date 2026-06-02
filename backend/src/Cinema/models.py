@@ -1,15 +1,8 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 28/May/2026 22:20
- * @Description  : 电影票务靶场数据表模型定义
-"""
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import DECIMAL, ForeignKey, INT, SMALLINT, TIMESTAMP, VARCHAR, Uuid, UniqueConstraint
+from sqlalchemy import DECIMAL, INT, SMALLINT, TIMESTAMP, VARCHAR, ForeignKey, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.Auth.models import Base
@@ -57,7 +50,6 @@ class Movie(Base, CommonAttr):
         default="",
         comment="安利推荐语",
     )
-
 
 
 class CinemaRoom(Base, CommonAttr):

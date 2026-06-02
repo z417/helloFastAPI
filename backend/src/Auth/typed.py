@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 27/Apr/2023 14:50
- * @LastEditors  : Yuri
- * @LastEditTime : 20/Jun/2023 11:14
- * @FilePath     : /helloFastAPI/backend/src/Auth/typed.py
- * @Description  : define types
-"""
 from pydantic import constr
 
 _NameType = constr(

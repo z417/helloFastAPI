@@ -2,60 +2,59 @@ import httpx
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport
+
+from src.Auth.models import Base, User
 from src.common.dependencies import get_async_engine, get_async_session
 from src.main import helloFastApi as app
-from src.Auth.models import Base, User
+
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_database():
     e = get_async_engine()
     engine = await e.__anext__()
-    
+
     # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     session_gen = get_async_session(engine)
     session = await session_gen.__anext__()
-    
+
     # Create admin user if not exists to allow API-based seeding
     from sqlalchemy import select
+
     stmt = select(User).where(User.email == "admin@cinema.com")
     res = await session.execute(stmt)
     if not res.scalar_one_or_none():
-        new_admin = User(
-            email="admin@cinema.com",
-            password="admin12345",
-            admin=1,
-            first_name="Cinema",
-            last_name="Admin",
-            gender=1
-        )
+        new_admin = User(email="admin@cinema.com", password="admin12345", admin=1, first_name="Cinema", last_name="Admin", gender=1)
         session.add(new_admin)
         await session.commit()
-        
+
     await session.close()
     await engine.dispose()
 
+
 def get_send_password(pwd: str) -> str:
     from src.settings import settings
+
     if settings.BOOKING_SM4_PASSWORD_ENCRYPT:
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-        from cryptography.hazmat.primitives import padding
-        from cryptography.hazmat.backends import default_backend
         import os
         import time
-        
+
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import padding
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
         key = settings.BOOKING_SM4_KEY.encode()
         iv = os.urandom(16)  # 生成 16 字节随机 IV
-        
+
         # 内嵌 13 位毫秒时间戳
         timestamp_ms = str(int(time.time() * 1000))
         plain_payload = f"{timestamp_ms}:{pwd}"
-        
+
         cipher = Cipher(algorithms.SM4(key), modes.CBC(iv), backend=default_backend())
         encryptor = cipher.encryptor()
-        
+
         padder = padding.PKCS7(128).padder()
         padded_pwd = padder.update(plain_payload.encode()) + padder.finalize()
         ct = encryptor.update(padded_pwd) + encryptor.finalize()
@@ -64,35 +63,34 @@ def get_send_password(pwd: str) -> str:
 
 
 async def booking_order_adaptive(client, showtime_id, seat_id, user_token):
-    from src.settings import settings
-    from hashlib import sha256
-    from datetime import datetime, timezone
     import uuid
-    
+    from datetime import datetime, timezone
+    from hashlib import sha256
+
+    from src.settings import settings
+
     headers = {"Authorization": f"Bearer {user_token}"}
-    body = {
-        "showtime_id": str(showtime_id),
-        "seat_id": str(seat_id)
-    }
-    
+    body = {"showtime_id": str(showtime_id), "seat_id": str(seat_id)}
+
     if settings.BOOKING_SIGNATURE_CHECK or settings.BOOKING_SM3_SIGNATURE_CHECK:
         timestamp = str(int(datetime.now(timezone.utc).timestamp() * 1000))
         nonce = str(uuid.uuid4())
         headers["X-Timestamp"] = timestamp
         headers["X-Nonce"] = nonce
-        
+
         secret_key = settings.BOOKING_SIGNATURE_SECRET
         sig_payload = f"{showtime_id}{seat_id}{timestamp}{nonce}{secret_key}"
-        
+
         if settings.BOOKING_SIGNATURE_CHECK:
             body["signature"] = sha256(sig_payload.encode()).hexdigest()
-            
+
         if settings.BOOKING_SM3_SIGNATURE_CHECK:
             from cryptography.hazmat.primitives import hashes
+
             h = hashes.Hash(hashes.SM3())
             h.update(sig_payload.encode())
             headers["X-Signature"] = h.finalize().hex()
-            
+
     return await client.post("/api/cinema/order", json=body, headers=headers)
 
 
@@ -104,25 +102,25 @@ async def test_cinema_booking_flow():
         r1 = await client.post("/api/auth/token", data={"username": "admin@cinema.com", "password": get_send_password("admin12345")})
         assert r1.status_code == 201, f"Admin login failed: {r1.text}"
         token = r1.json()["data"]["access_token"] if "data" in r1.json() else r1.json().get("access_token")
-        
+
         # 2. 执行数据重置与播种
         r2 = await client.post("/api/cinema/reset", headers={"Authorization": f"Bearer {token}"})
         assert r2.status_code == 200, f"Database reset failed: {r2.text}"
-        
+
         # 3. 普通会员登录
         r3 = await client.post("/api/auth/token", data={"username": "user_1@test.com", "password": get_send_password("123456")})
         assert r3.status_code == 201, f"User login failed: {r3.text}"
         user_token = r3.json()["data"]["access_token"] if "data" in r3.json() else r3.json().get("access_token")
-        
+
         # 4. 获取排片场次
         r4 = await client.get("/api/cinema/showtimes", headers={"Authorization": f"Bearer {user_token}"})
         assert r4.status_code == 200, f"Failed to get showtimes: {r4.text}"
         showtimes = r4.json()["data"]["showtimes"]
         assert len(showtimes) > 0, "No showtimes available"
-        
+
         showtime = showtimes[0]
         showtime_id = showtime["uid"]
-        
+
         # 校验豆瓣 Top100 电影的扩展字段已成功载入
         movie_obj = showtime["movie"]
         assert "rating" in movie_obj
@@ -131,7 +129,7 @@ async def test_cinema_booking_flow():
         assert float(movie_obj["rating"]) > 0
         assert len(movie_obj["genres"]) > 0
         assert len(movie_obj["summary"]) > 0
-        
+
         # 5. 获取指定场次座位
         r5 = await client.get(f"/api/cinema/showtimes/{showtime_id}/seats", headers={"Authorization": f"Bearer {user_token}"})
         assert r5.status_code == 200, f"Failed to get seats: {r5.text}"
@@ -139,10 +137,10 @@ async def test_cinema_booking_flow():
         assert len(seats) == 40, f"Expected exactly 40 seats for VIP room, but got {len(seats)}"
         available_seats = [s for s in seats if s["status"] == 0]
         assert len(available_seats) == 40, "All seats should be available initially"
-        
+
         seat = available_seats[0]
         seat_id = seat["uid"]
-        
+
         # 6. 并发购票下单测试 (Decimal精度验证)
         r6 = await booking_order_adaptive(client, showtime_id, seat_id, user_token)
         assert r6.status_code == 201, f"Booking failed: {r6.text}"
@@ -152,7 +150,7 @@ async def test_cinema_booking_flow():
 
 import uuid
 from hashlib import sha256
-from datetime import datetime, timezone
+
 
 @pytest.mark.asyncio
 async def test_admin_config_switches_combination():
@@ -168,12 +166,7 @@ async def test_admin_config_switches_combination():
         orig_config = r2.json()["data"]
 
         # 3. 组合并开启所有性能与安全校验开关 (随意组合)
-        test_payload = {
-            "pool_mode": "null",
-            "lock_mode": "optimistic",
-            "slow_query": True,
-            "signature_check": True
-        }
+        test_payload = {"pool_mode": "null", "lock_mode": "optimistic", "slow_query": True, "signature_check": True}
         r3 = await client.post("/api/cinema/config", json=test_payload, headers={"Authorization": f"Bearer {admin_token}"})
         assert r3.status_code == 200, f"Failed to update config: {r3.text}"
 
@@ -200,7 +193,9 @@ async def test_admin_config_switches_combination():
             seat_id = available_seats[0]["uid"]
 
             # 无签名下单应失败 (401 或 400 校验异常)
-            r8 = await client.post("/api/cinema/order", json={"showtime_id": showtime_id, "seat_id": seat_id}, headers={"Authorization": f"Bearer {user_token}"})
+            r8 = await client.post(
+                "/api/cinema/order", json={"showtime_id": showtime_id, "seat_id": seat_id}, headers={"Authorization": f"Bearer {user_token}"}
+            )
             assert r8.status_code in [400, 401], f"Expected signature check failure but got: {r8.status_code} {r8.text}"
 
             # 6. 生成数字签名并下单 (应成功通过)
@@ -228,23 +223,24 @@ async def test_db_engine_singleton_and_hot_reload():
     # 1. 获取两次 Engine，验证它们是同一个单例对象 (未改变配置时)
     engine_gen1 = get_async_engine()
     engine1 = await engine_gen1.__anext__()
-    
+
     engine_gen2 = get_async_engine()
     engine2 = await engine_gen2.__anext__()
-    
+
     assert engine1 is engine2, "在配置未变更时，数据库引擎单例未能复用，导致长连接池失效"
-    
+
     # 2. 模拟配置热变更，再次获取，验证引擎已被 dispose 并重新实例化
     from src.settings import settings
+
     original_pool_mode = settings.DB_POOL_MODE
-    
+
     try:
         # 修改配置以触发热重载
         settings.DB_POOL_MODE = "null" if original_pool_mode != "null" else "queue"
-        
+
         engine_gen3 = get_async_engine()
         engine3 = await engine_gen3.__anext__()
-        
+
         assert engine3 is not engine1, "配置发生热变更后，引擎单例未能成功销毁并热重载重建"
     finally:
         # 还原配置
@@ -253,18 +249,20 @@ async def test_db_engine_singleton_and_hot_reload():
 
 @pytest.mark.asyncio
 async def test_user_orders_and_timing_checks():
-    
-    from datetime import datetime, timezone, timedelta
+
+    from datetime import datetime, timedelta, timezone
     from uuid import uuid4
-    from src.Cinema.models import Showtime, Seat, Movie, CinemaRoom
+
     from sqlalchemy import select
+
+    from src.Cinema.models import CinemaRoom, Movie, Seat, Showtime
 
     async with httpx.AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 1. 管理员登录并重置
         r1 = await client.post("/api/auth/token", data={"username": "admin@cinema.com", "password": get_send_password("admin12345")})
         assert r1.status_code == 201
         admin_token = r1.json()["data"]["access_token"] if "data" in r1.json() else r1.json().get("access_token")
-        
+
         r2 = await client.post("/api/cinema/reset", headers={"Authorization": f"Bearer {admin_token}"})
         assert r2.status_code == 200
 
@@ -322,10 +320,10 @@ async def test_user_orders_and_timing_checks():
 
         near_showtime_id = uuid4()
         near_seat_id = uuid4()
-        
+
         # 场次时间设为当前时间 + 2分钟 (不足 5 分钟)
         near_start = datetime.now(timezone.utc) + timedelta(minutes=2)
-        
+
         near_showtime = Showtime(
             uid=near_showtime_id,
             movie_id=movie.uid,
@@ -334,16 +332,9 @@ async def test_user_orders_and_timing_checks():
             price=showtime["price"],
             remaining_inventory=100,
             version=1,
-            is_deleted=0
+            is_deleted=0,
         )
-        near_seat = Seat(
-            uid=near_seat_id,
-            showtime_id=near_showtime_id,
-            row_num=1,
-            col_num=1,
-            status=0,
-            is_deleted=0
-        )
+        near_seat = Seat(uid=near_seat_id, showtime_id=near_showtime_id, row_num=1, col_num=1, status=0, is_deleted=0)
         session.add(near_showtime)
         session.add(near_seat)
         await session.commit()
@@ -358,16 +349,16 @@ async def test_user_orders_and_timing_checks():
 
         # 7. 退票测试
         order_id = order["uid"]
-        
+
         # 正常退票
         r_refund = await client.post(f"/api/cinema/order/{order_id}/refund", headers={"Authorization": f"Bearer {user_token}"})
         assert r_refund.status_code == 200, f"Refund failed: {r_refund.text}"
         assert "退票成功" in r_refund.json()["data"]
-        
+
         # 重复退票拦截 (期望返回 400)
         r_refund_dup = await client.post(f"/api/cinema/order/{order_id}/refund", headers={"Authorization": f"Bearer {user_token}"})
         assert r_refund_dup.status_code == 400
-        
+
         # 校验获取的订单中订单状态变成 2 (已退票)
         r_orders_check = await client.get("/api/cinema/orders", headers={"Authorization": f"Bearer {user_token}"})
         assert r_orders_check.status_code == 200

@@ -1,18 +1,11 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 28/May/2026 22:20
- * @Description  : 豆瓣评分 Top 100 高并发压测数据种子播种引擎
-"""
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from uuid import uuid4
 
+import bcrypt
 from sqlalchemy import delete, insert, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import bcrypt
-from decimal import Decimal
 from src.Auth.models import Base, User
 from src.Cinema.models import CinemaRoom, Movie, Seat, Showtime, TicketOrder
 
@@ -39,9 +32,9 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
     # ==================== Step 2: 播种 1,000 名压测虚拟用户 (Raw SQL 极速注入) ====================
     hashed_passwd = "$2b$12$Jl9VH.0D4vj7.oPVzGfkW.PK8.9BNxpNqY0dui0g0ro7ju8uSSXFm"
     now_time = datetime.now(timezone.utc)
-    
+
     user_list = []
-    
+
     # 额外播种 1 个特权管理员用户
     user_list.append(
         {
@@ -81,7 +74,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
                 "is_deleted": 0,
             }
         )
-    
+
     sql_insert_user = text("""
         INSERT INTO users (uid, email, passwd, admin, first_name, last_name, gender, birthday, user_status, avatar, current_session_id, created_at, updated_at, is_deleted)
         VALUES (:uid, :email, :passwd, :admin, :first_name, :last_name, :gender, :birthday, :user_status, :avatar, :current_session_id, :created_at, :updated_at, :is_deleted)
@@ -189,20 +182,14 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
         ("哈利·波特与阿兹卡班的囚徒", 142, "8.9", "奇幻 / 冒险", "阿方索执导的哈利波特巅峰黑暗风。"),
         ("一一", 173, "9.1", "剧情", "杨德昌家庭叙事史诗，人生其实很简单。"),
         ("看不见的客人", 106, "8.8", "悬疑 / 惊悚", "西班牙悬疑反转神作，细节决定成败。"),
-        ("海街日记", 127, "8.8", "剧情", "四姐妹的镰仓四季，温柔淡雅的生活流。")
+        ("海街日记", 127, "8.8", "剧情", "四姐妹的镰仓四季，温柔淡雅的生活流。"),
     ]
 
     movie_list = []
     for title, duration, rating, genres, summary in raw_movies:
-        movie_list.append({
-            "uid": uuid4(),
-            "title": title,
-            "duration": duration,
-            "rating": Decimal(rating),
-            "genres": genres,
-            "summary": summary,
-            "is_deleted": 0
-        })
+        movie_list.append(
+            {"uid": uuid4(), "title": title, "duration": duration, "rating": Decimal(rating), "genres": genres, "summary": summary, "is_deleted": 0}
+        )
 
     await session.execute(insert(Movie), movie_list)
     await session.flush()
@@ -223,17 +210,17 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
     r_uids = [r["uid"] for r in room_list]
 
     showtime_list = []
-    
+
     # 制定 4 个影厅的交叉排片时段分布：每个影厅每天排 18 场高频排片
     # 每天 4 厅共 18 * 4 = 72 场；30 天一共高频排片 72 * 30 = 2,160 场！
     # 完美满足深度分页与高并发压测，总售票库达 2,160 * 40 = 86,400 张！
     schedule_templates = []
-    for h in range(6, 24): # 早上 6:00 到晚上 23:00
+    for h in range(6, 24):  # 早上 6:00 到晚上 23:00
         # 每个小时段为不同影厅均匀交叉排片
-        schedule_templates.append({"hour": h, "minute": 0, "room_idx": 0, "price": Decimal('35.00')})
-        schedule_templates.append({"hour": h, "minute": 15, "room_idx": 1, "price": Decimal('45.00')})
-        schedule_templates.append({"hour": h, "minute": 30, "room_idx": 2, "price": Decimal('40.00')})
-        schedule_templates.append({"hour": h, "minute": 45, "room_idx": 3, "price": Decimal('50.00')})
+        schedule_templates.append({"hour": h, "minute": 0, "room_idx": 0, "price": Decimal("35.00")})
+        schedule_templates.append({"hour": h, "minute": 15, "room_idx": 1, "price": Decimal("45.00")})
+        schedule_templates.append({"hour": h, "minute": 30, "room_idx": 2, "price": Decimal("40.00")})
+        schedule_templates.append({"hour": h, "minute": 45, "room_idx": 3, "price": Decimal("50.00")})
 
     # 只取前 72 个时段模板，保证每天排满 72 场
     schedule_templates = schedule_templates[:72]
@@ -241,11 +228,11 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
     showtime_index = 0
     for day_offset in range(30):
         target_date = now.date() + timedelta(days=day_offset)
-        
+
         for temp in schedule_templates:
             # 100部电影顺序且均匀循环轮播播种
             movie_idx = showtime_index % 100
-            
+
             st_datetime = datetime(
                 year=target_date.year,
                 month=target_date.month,
@@ -253,11 +240,11 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
                 hour=temp["hour"],
                 minute=temp["minute"],
             )
-            
+
             # 防阻断：避免排出的今天场次由于时间早于当前时间 + 3小时偏移导致被售票拦截
             if st_datetime <= now + timedelta(hours=3):
                 st_datetime = st_datetime + timedelta(days=1)
-                
+
             showtime_list.append(
                 {
                     "uid": uuid4(),
@@ -271,7 +258,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
                 }
             )
             showtime_index += 1
-            
+
     await session.execute(insert(Showtime), showtime_list)
     await session.flush()
 
@@ -280,7 +267,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
     # 物理座位网格为 5 排 x 8 列 = 40 座 (控制在 50座以内，网页渲染极其美观大方)
     rows = 5
     cols = 8
-    
+
     for st in showtime_list:
         for r in range(1, rows + 1):
             for c in range(1, cols + 1):

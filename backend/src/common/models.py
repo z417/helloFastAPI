@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 09/Apr/2023 14:08
- * @LastEditors  : Yuri
- * @LastEditTime : 21/Jun/2023 10:00
- * @FilePath     : /helloFastAPI/backend/src/common/models.py
- * @Description  : common models
-"""
 from typing import Optional
 from uuid import UUID
 

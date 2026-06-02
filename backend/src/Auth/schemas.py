@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 27/Apr/2023 06:12
- * @LastEditors  : Yuri
- * @LastEditTime : 25/Aug/2023 16:33
- * @FilePath     : /helloFastAPI/backend/src/Auth/schemas.py
- * @Description  : pydantic models for request and response
-"""
 from datetime import date
 from typing import Optional
 from uuid import UUID
@@ -58,6 +48,7 @@ class SignupSchema(BaseModel):
     @classmethod
     def validate_password(cls, v):
         from src.settings import settings
+
         if settings.AUTH_STRONG_PASSWORD_CHECK:
             if len(v) < 8:
                 raise ValueError("Password must be at least 8 characters long")

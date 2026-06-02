@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 19/Jun/2023 11:42
- * @LastEditors  : Yuri
- * @LastEditTime : 25/Aug/2023 16:27
- * @FilePath     : /helloFastAPI/backend/src/middlewares/dbEngine.py
- * @Description  : database engine module, created by middleware
-"""
 from typing import Dict, Optional, Union
 
 from sqlalchemy.engine.url import URL
@@ -42,9 +32,7 @@ class DBEngineMiddleware(BaseHTTPMiddleware):
             asyncDbengine = custom_engine
         else:
             if not db_url:
-                raise ValueError(
-                    "You need to pass a db_url or a custom_engine parameter."
-                )
+                raise ValueError("You need to pass a db_url or a custom_engine parameter.")
             asyncDbengine = create_async_engine(
                 db_url,
                 # If the same engine must be shared between different loop, it should be configured to disable pooling using NullPool, preventing the Engine from using any connection more than once:

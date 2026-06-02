@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 27/Apr/2023 07:39
- * @LastEditors  : Yuri
- * @LastEditTime : 20/Jun/2023 12:39
- * @FilePath     : /helloFastAPI/backend/src/Auth/__init__.py
- * @Description  : file desc
-"""
 __version__ = "0.0.2"
 
 from src.Auth.models import User

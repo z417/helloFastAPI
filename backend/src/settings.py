@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 02/Jun/2023 14:26
- * @LastEditors  : Yuri
- * @LastEditTime : 25/Aug/2023 13:43
- * @FilePath     : /helloFastAPI/backend/src/settings.py
- * @Description  : file desc
-"""
 from json import dumps, loads
 from pathlib import Path
 from typing import Union
@@ -66,9 +56,6 @@ class Settings:
     BOOKING_SM4_PASSWORD_ENCRYPT: bool = config("BOOKING_SM4_PASSWORD_ENCRYPT", cast=bool, default=False)  # 登录密码国密SM4传输加密开关
     BOOKING_SM4_KEY: str = config("BOOKING_SM4_KEY", cast=str, default="hello_cinema_sm4")  # SM4 对称加密密钥，必须为16字节
     AUTH_STRONG_PASSWORD_CHECK: bool = config("AUTH_STRONG_PASSWORD_CHECK", cast=bool, default=False)  # 简单密码强度开关
-
-
-
 
 
 settings = Settings()

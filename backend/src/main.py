@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 09/Apr/2023 10:03
- * @LastEditors  : Yuri
- * @LastEditTime : 25/Aug/2023 14:14
- * @FilePath     : /helloFastAPI/backend/src/main.py
- * @Description  : file desc
-"""
 from fastapi import FastAPI
 from uvicorn import run
 

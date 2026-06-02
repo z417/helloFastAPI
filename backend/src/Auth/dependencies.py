@@ -1,22 +1,11 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 27/Apr/2023 06:34
- * @LastEditors  : Yuri
- * @LastEditTime : 25/Aug/2023 16:32
- * @FilePath     : /helloFastAPI/backend/src/Auth/dependencies.py
- * @Description  : verify the data conforms to database constraints
-"""
 from datetime import datetime, timedelta, timezone
 from typing import Mapping, Tuple, Union
-
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from cacheout import LFUCache
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import ExpiredSignatureError, JWTError, jwt
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.Auth.config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -57,7 +46,7 @@ async def create_refresh_token(data: dict) -> str:
             exp_dt = exp if exp.tzinfo else exp.replace(tzinfo=timezone.utc)
         case _:
             exp_dt = datetime.now(timezone.utc)
-    
+
     new_exp = exp_dt + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
     payload.update(
         {
@@ -80,7 +69,7 @@ async def renew_token_via_refresh(refresh_token: str, session: AsyncSession) -> 
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired") from e
     except JWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token") from e
-    
+
     email = payload.get("sub")
     token_session_id = payload.get("session_id")
     if not email or not token_session_id:
@@ -119,13 +108,12 @@ async def parse_jwt_data(
     return payload
 
 
-
 async def authenticate_user(
     form_data=Depends(OAuth2PasswordRequestForm),
     session=Depends(get_async_session),
 ) -> Union[User, HTTPException, BadRequestException]:
     from src.settings import settings
-    
+
     plain_password = form_data.password
     if settings.BOOKING_SM4_PASSWORD_ENCRYPT:
         try:
@@ -133,39 +121,40 @@ async def authenticate_user(
             raw_password_hex = form_data.password.strip()
             if len(raw_password_hex) < 64:
                 raise ValueError("密文长度非法，必须包含 16 字节随机 IV 头部")
-                
+
             iv_hex = raw_password_hex[:32]
             ct_hex = raw_password_hex[32:]
-            
+
             iv = bytes.fromhex(iv_hex)
             ct = bytes.fromhex(ct_hex)
-            
+
             # 2. SM4 CBC 模式解密
-            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-            from cryptography.hazmat.primitives import padding
-            from cryptography.hazmat.backends import default_backend
             from datetime import datetime, timezone
-            
+
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import padding
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
             key = settings.BOOKING_SM4_KEY.encode()
             cipher = Cipher(algorithms.SM4(key), modes.CBC(iv), backend=default_backend())
             decryptor = cipher.decryptor()
             decrypted_padded = decryptor.update(ct) + decryptor.finalize()
-            
+
             unpadder = padding.PKCS7(128).unpadder()
             password_bytes = unpadder.update(decrypted_padded) + unpadder.finalize()
             decrypted_payload = password_bytes.decode()
-            
+
             # 3. 动态时间戳解析与 5 分钟重放时效性校验
             if ":" not in decrypted_payload:
                 raise ValueError("密文负载格式非法，缺少分隔符")
-                
+
             timestamp_str, plain_password = decrypted_payload.split(":", 1)
             ts_ms = int(timestamp_str)
             now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
-            
+
             if abs(now_ms - ts_ms) > 300000:
                 raise ValueError("接口安全验证失败，加密登录密码已超出 5 分钟有效期 (防重放拦截)")
-                
+
         except Exception as e:
             raise BadRequestException(f"密文解密失败，或安全防重放拦截: {str(e)}")
 
@@ -192,7 +181,7 @@ async def get_current_user(
     user: Union[User, None] = (await get_user_by_email(session, email)).scalar_one_or_none()
     if not user or user.user_status == FLAG_USER_STATUS_LOCKED:
         raise credentials_exception
-    
+
     token_session_id = payload.get("session_id")
     if not token_session_id or token_session_id != user.current_session_id:
         raise HTTPException(

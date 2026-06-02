@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 27/Apr/2023 13:49
- * @LastEditors  : Yuri
- * @LastEditTime : 25/Aug/2023 17:26
- * @FilePath     : /helloFastAPI/backend/src/Auth/router.py
- * @Description  : Auth endpoints
-"""
-
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -42,10 +31,11 @@ async def OAuth2_login(
     session: AsyncSession = Depends(get_async_session),
 ) -> TokenResponseSchema:
     import uuid
+
     session_id = str(uuid.uuid4())
     user.current_session_id = session_id
     await session.commit()
-    
+
     access_token, data = await create_token(
         data={"sub": user.email, "session_id": session_id},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),

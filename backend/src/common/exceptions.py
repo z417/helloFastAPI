@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 09/Apr/2023 14:32
- * @LastEditors  : Yuri
- * @LastEditTime : 21/Jun/2023 09:53
- * @FilePath     : /helloFastAPI/backend/src/common/exceptions.py
- * @Description  : global exceptions
-"""
 from fastapi.utils import is_body_allowed_for_status_code
 from starlette import status
 from starlette.requests import Request

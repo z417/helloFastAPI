@@ -1,18 +1,12 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 28/May/2026 22:20
- * @Description  : 电影票务靶场核心 API 路由与业务控制器 (安全加固版)
-"""
 import asyncio
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
-from json import dumps
 from uuid import UUID, uuid4
-from src.utils import L
+
 from cacheout import LFUCache
+
+from src.utils import L
 
 nonce_cache = LFUCache()
 
@@ -25,6 +19,18 @@ from sqlalchemy.orm import joinedload
 
 from src.Auth.dependencies import get_current_user
 from src.Auth.models import User
+from src.Cinema.models import CinemaRoom, Movie, Seat, Showtime, TicketOrder
+from src.Cinema.schemas import (
+    ConfigResponseSchema,
+    CreateOrderSchema,
+    OrderResponseSchema,
+    SeatResponseSchema,
+    ShowtimeListResponseSchema,
+    ShowtimeResponseSchema,
+    UpdateConfigSchema,
+    UserOrderResponseSchema,
+)
+from src.Cinema.seeder import run_reset_and_seed
 from src.common import (
     BadRequestException,
     ConflictException,
@@ -35,19 +41,7 @@ from src.common import (
     UnAuthenticatedException,
     get_async_session,
 )
-from src.settings import Settings, settings
-from src.Cinema.models import Movie, CinemaRoom, Seat, Showtime, TicketOrder
-from src.Cinema.schemas import (
-    ConfigResponseSchema,
-    CreateOrderSchema,
-    OrderResponseSchema,
-    SeatResponseSchema,
-    ShowtimeResponseSchema,
-    ShowtimeListResponseSchema,
-    UpdateConfigSchema,
-    UserOrderResponseSchema,
-)
-from src.Cinema.seeder import run_reset_and_seed
+from src.settings import settings
 
 router = APIRouter(
     prefix="/api/cinema",
@@ -69,26 +63,25 @@ async def reset_database(
 
     try:
         await run_reset_and_seed(session)
-        
+
         # 同步管理员的当前 session_id 到重置后的新库，避免 SSO 规则将当前管理员踢出
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
             with L.catch(message="SSO session restore failed during reset", level="ERROR"):
                 from jose import jwt
-                from src.Auth.config import SECRET_KEY, ALGORITHM
+
+                from src.Auth.config import ALGORITHM, SECRET_KEY
+
                 payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
                 session_id = payload.get("session_id")
                 if session_id:
-                    await session.execute(
-                        update(User)
-                        .where(User.email == current_user.email)
-                        .values(current_session_id=session_id)
-                    )
+                    await session.execute(update(User).where(User.email == current_user.email).values(current_session_id=session_id))
                     await session.commit()
 
         # 强制清理并释放全局 _engine，以防外部测试进程/日结清盘覆盖 SQLite 物理文件后连接句柄失效
         from src.common import dependencies
+
         if dependencies._engine is not None:
             await dependencies._engine.dispose()
             dependencies._engine = None
@@ -107,7 +100,7 @@ async def get_cinema_config(response: Response) -> ResponseModel:
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
-    
+
     data = ConfigResponseSchema(
         pool_mode=settings.DB_POOL_MODE,
         lock_mode=settings.BOOKING_LOCK_MODE,
@@ -165,7 +158,7 @@ async def update_cinema_config(
     try:
         env_path = Path(settings.ENV_FILE)
         env_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         cinema_keys = {
             "DB_POOL_MODE": req.pool_mode,
             "BOOKING_LOCK_MODE": req.lock_mode,
@@ -185,10 +178,10 @@ async def update_cinema_config(
                     if not stripped or stripped.startswith("#") or stripped.startswith(";") or stripped.startswith("//"):
                         env_lines.append(line)
                         continue
-                    
+
                     # 确保被保留的每一行以换行符结尾，防止发生行尾拼接
                     line_to_append = line if line.endswith("\n") else line + "\n"
-                    
+
                     if "=" in stripped:
                         parts = stripped.split("=", 1)
                         key = parts[0].strip()
@@ -199,12 +192,12 @@ async def update_cinema_config(
                             env_lines.append(line_to_append)
                     else:
                         env_lines.append(line_to_append)
-        
+
         # 将原文件中不存在的配置变量追加到末尾
         for key, val in cinema_keys.items():
             if key not in updated_keys:
                 env_lines.append(f"{key}={val}\n")
-        
+
         # 写入文件
         with env_path.open(mode="w", encoding="utf-8") as f:
             f.writelines(env_lines)
@@ -215,8 +208,10 @@ async def update_cinema_config(
     return ResponseModel(data="success")
 
 
-from sqlalchemy import func
 from typing import Optional
+
+from sqlalchemy import func
+
 
 @router.get("/showtimes", response_model=ResponseModel[ShowtimeListResponseSchema])
 async def get_showtimes(
@@ -227,7 +222,7 @@ async def get_showtimes(
     search_name: Optional[str] = None,
     limit: int = 15,
     offset: int = 0,
-    session: AsyncSession = Depends(get_async_session)
+    session: AsyncSession = Depends(get_async_session),
 ) -> ResponseModel:
     """
     排片场次联合检索查询接口 (高频读，支持慢 SQL 控制开关、完全数据库层过滤及分页查询)
@@ -237,11 +232,7 @@ async def get_showtimes(
         await asyncio.sleep(0.5)  # 注入 500ms 并发排队挂起延迟，模拟无索引下的表死锁/大表模糊扫描
 
     now_plus_5m = datetime.now() + timedelta(minutes=5)
-    stmt = (
-        select(Showtime)
-        .join(Showtime.movie)
-        .where(Showtime.is_deleted == 0, Showtime.start_time >= now_plus_5m)
-    )
+    stmt = select(Showtime).join(Showtime.movie).where(Showtime.is_deleted == 0, Showtime.start_time >= now_plus_5m)
 
     # 1. 电影模糊搜索匹配 (DB 级别模糊查询)
     if search_name:
@@ -267,6 +258,7 @@ async def get_showtimes(
 
     # 6. 高性能 count 查询获取符合交集条件的总票单量 total (分页核心)
     from sqlalchemy import func as sa_func
+
     count_stmt = select(sa_func.count()).select_from(stmt.subquery())
     count_res = await session.execute(count_stmt)
     total = count_res.scalar() or 0
@@ -288,7 +280,7 @@ async def get_showtimes(
                 remaining_inventory=s.remaining_inventory,
             )
         )
-    
+
     # 包装成分页结构响应返回
     data = ShowtimeListResponseSchema(total=total, showtimes=showtimes_data)
     return ResponseModel(data=data)
@@ -363,6 +355,7 @@ async def create_booking_order(
             if not x_signature:
                 raise UnAuthenticatedException(message="接口安全验证失败，国密 SM3 签名 Headers X-Signature 缺失")
             from cryptography.hazmat.primitives import hashes
+
             h = hashes.Hash(hashes.SM3())
             h.update(sig_payload.encode())
             computed_sig_sm3 = h.finalize().hex()
@@ -375,7 +368,6 @@ async def create_booking_order(
         nonce_cache.set(x_nonce, 1, ttl=300)
 
     lock_mode = settings.BOOKING_LOCK_MODE.lower()
-
 
     # ==================== Step 2: 根据高并发锁模式，查询场次与座位 ====================
     # 悲观锁追加 WITH FOR UPDATE 行排他锁；无锁/乐观锁使用普通查询，消除重复分支
@@ -431,11 +423,7 @@ async def create_booking_order(
             raise ConflictException(message="购票人数较多，请稍后重试")
 
         # 乐观锁原子的占领座位状态 (status: 0 -> 1)
-        stmt_update_seat = (
-            update(Seat)
-            .where(Seat.uid == seat.uid, Seat.status == 0)
-            .values(status=1, sold_to_user=current_user.uid)
-        )
+        stmt_update_seat = update(Seat).where(Seat.uid == seat.uid, Seat.status == 0).values(status=1, sold_to_user=current_user.uid)
         seat_update_res = await session.execute(stmt_update_seat)
         if seat_update_res.rowcount == 0:
             raise ConflictException(message="该座位刚刚被其他用户占用了")
@@ -509,10 +497,10 @@ async def get_user_orders(
         .limit(limit)
         .offset(offset)
     )
-    
+
     res = await session.execute(stmt)
     orders = res.all()
-    
+
     data = [
         UserOrderResponseSchema(
             uid=o.uid,
@@ -545,56 +533,55 @@ async def refund_ticket(
     stmt_order = select(TicketOrder).where(TicketOrder.uid == order_id).with_for_update()
     res_order = await session.execute(stmt_order)
     order = res_order.scalar_one_or_none()
-    
+
     if not order:
         raise NotFoundException(message="订单未找到")
-        
+
     if order.user_id != current_user.uid:
         raise ForbiddenException(message="无权操作此订单")
-        
+
     if order.status == 2:
         raise BadRequestException(message="该订单已成功退票，请勿重复申请")
-        
+
     # 2. 查询对应的场次与座位并加锁，确保库存与状态一致性
     stmt_showtime = select(Showtime).where(Showtime.uid == order.showtime_id).with_for_update()
     res_showtime = await session.execute(stmt_showtime)
     showtime = res_showtime.scalar_one_or_none()
-    
+
     if not showtime:
         raise NotFoundException(message="该订单关联的放映场次未找到")
-        
+
     # 3. 校验放映时间：如果开映时间已过，则不允许退票
     now = datetime.now()
     start_time = showtime.start_time
     if start_time.tzinfo is not None:
         start_time = start_time.replace(tzinfo=None)
-        
+
     if start_time < now:
         raise BadRequestException(message="该放映场次已经放映或开映，不可申请退票")
-        
+
     stmt_seat = select(Seat).where(Seat.uid == order.seat_id).with_for_update()
     res_seat = await session.execute(stmt_seat)
     seat = res_seat.scalar_one_or_none()
-    
+
     if not seat:
         raise NotFoundException(message="该订单关联的座位未找到")
-        
+
     # 4. 执行退票状态流更新
     order.status = 2  # 状态 2 表示已退票
-    
+
     # 恢复座位可选状态
     seat.status = 0
     seat.sold_to_user = None
-    
+
     # 恢复场次余票库存，并递增版本（兼容乐观锁并发）
     showtime.remaining_inventory += 1
     showtime.version += 1
-    
+
     try:
         await session.commit()
     except Exception as e:
         await session.rollback()
         raise InternalServerError(message=f"退票失败，系统繁忙: {str(e)}")
-        
-    return ResponseModel(data="退票成功，退款已秒级原路退回")
 
+    return ResponseModel(data="退票成功，退款已秒级原路退回")

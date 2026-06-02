@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 27/Apr/2023 06:55
- * @LastEditors  : Yuri
- * @LastEditTime : 21/Jun/2023 08:03
- * @FilePath     : /helloFastAPI/backend/src/Auth/config.py
- * @Description  : Auth module config
-"""
 from typing import Final
 
 from passlib.context import CryptContext

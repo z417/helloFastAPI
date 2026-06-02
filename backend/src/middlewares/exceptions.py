@@ -1,15 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 19/Jun/2023 12:03
- * @LastEditors  : Yuri
- * @LastEditTime : 19/Jun/2023 12:04
- * @FilePath     : /helloFastAPI/backend/src/middlewares/exceptions.py
- * @Description  : file desc
-"""
-
-
 class MissingSessionError(Exception):
     """Excetion raised for when the user tries to access a database session before it is created."""
 

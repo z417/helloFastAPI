@@ -1,24 +1,13 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 09/Apr/2023 10:03
- * @LastEditors  : Yuri
- * @LastEditTime : 25/Aug/2023 14:14
- * @FilePath     : helloFastAPI/backend/src/appInit.py
- * @Description  : file desc
-"""
 from uuid import uuid1
 
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.cors import CORSMiddleware
 
 from src.Auth import auth_router
-from src.settings import settings
-from src.utils import L
 from src.Cinema import cinema_router
 from src.FileCodeBox.router import router as file_code_box_router
-
+from src.settings import settings
+from src.utils import L
 
 
 class AppInit:
@@ -69,7 +58,7 @@ class AppInit:
 
     def api_docs_init(self):
         ead = settings.ENABLE_API_DOCS
-        L.debug(f'Start server with {"enable" if ead else "disable"} api docs')
+        L.debug(f"Start server with {'enable' if ead else 'disable'} api docs")
         if ead:
             self.custom_openapi()
 
@@ -77,7 +66,6 @@ class AppInit:
         self.__app__.include_router(auth_router)
         self.__app__.include_router(cinema_router)
         self.__app__.include_router(file_code_box_router)
-
 
     def middleware_init(self):
         origins = ["*"]

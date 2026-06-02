@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 28/May/2026 22:20
- * @Description  : 电影票务靶场 Pydantic 请求与响应约束
-"""
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
@@ -23,7 +16,6 @@ class MovieSchema(BaseModel):
     rating: Decimal
     genres: str
     summary: str
-
 
 
 class CinemaRoomSchema(BaseModel):
@@ -97,7 +89,6 @@ class ConfigResponseSchema(BaseModel):
     sm4_key: str
 
 
-
 class UpdateConfigSchema(BaseModel):
     """
     靶场参数配置热调修改请求模型
@@ -115,6 +106,7 @@ class ShowtimeListResponseSchema(BaseModel):
     """
     排片场次分页返回包裹模型
     """
+
     total: int
     showtimes: list[ShowtimeResponseSchema]
 
@@ -123,6 +115,7 @@ class UserOrderResponseSchema(BaseModel):
     """
     用户已购票详情响应模型
     """
+
     uid: UUID
     showtime_id: UUID
     amount: Decimal
@@ -134,5 +127,3 @@ class UserOrderResponseSchema(BaseModel):
     start_time: datetime
     row_num: int
     col_num: int
-
-

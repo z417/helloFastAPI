@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 09/Apr/2023 16:32
- * @LastEditors  : Yuri
- * @LastEditTime : 25/Jun/2023 05:56
- * @FilePath     : /helloFastAPI/backend/src/Auth/models.py
- * @Description  : Auth module db models
-"""
 from json import dumps
 from re import match
 from typing import Optional
@@ -26,6 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
+
 from src.common import CommonAttr
 
 
@@ -47,6 +38,7 @@ class PasswordT(TypeDecorator):
         if not value:
             return value
         import re
+
         # 兼容性与安全性双重防御：精准匹配符合官方 Bcrypt 结构规范的 60 位哈希密文串
         is_bcrypt_hash = bool(re.match(r"^\$[2ayb]\$[0-9]{2}\$[./A-Za-z0-9]{53}$", value))
         if is_bcrypt_hash:
@@ -54,7 +46,6 @@ class PasswordT(TypeDecorator):
         # 使用原生 C 库级别的 bcrypt 产生强安全哈希
         salt = bcrypt.gensalt()
         return bcrypt.hashpw(value.encode("utf-8"), salt).decode("utf-8")
-
 
     def process_result_value(self, value, dialect):
         return value
@@ -117,7 +108,6 @@ class User(Base, CommonAttr):
         nullable=True,
         comment="current session id for single sign-on constraint",
     )
-
 
     @hybrid_property
     def full_name(self) -> str:

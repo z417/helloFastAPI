@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# coding=UTF-8
-"""
- * @Author       : Yuri
- * @Date         : 09/Apr/2023 14:08
- * @LastEditors  : Yuri
- * @LastEditTime : 21/Jun/2023 10:00
- * @FilePath     : /helloFastAPI/backend/src/common/schemas.py
- * @Description  : common schemas
-"""
 from typing import Generic, Optional, TypeVar
 
 from pydantic import BaseModel as PydanticBaseModel
@@ -15,7 +5,7 @@ from pydantic import BaseModel as PydanticBaseModel
 
 def camel(snake_case: str) -> str:
     words = snake_case.split("_")
-    return f'{words[0]}{"".join(word.capitalize() for word in words[1:])}'
+    return f"{words[0]}{''.join(word.capitalize() for word in words[1:])}"
 
 
 class BaseModel(PydanticBaseModel):
