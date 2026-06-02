@@ -41,8 +41,7 @@ def get_send_password(pwd: str) -> str:
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_replay_database():
-    e = get_async_engine()
-    engine = await e.__anext__()
+    engine = await get_async_engine()
 
     # 物理建表与管理员创建，以允许调用 reset 接口进行播种
     async with engine.begin() as conn:

@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict
 from uuid import uuid1
 
 from fastapi import FastAPI, Request, Response
@@ -38,16 +39,22 @@ class AppInit:
             "options",
         ]
         # look for the error 422 and removes it
-        for method in openapi_schema.get("paths"):  # type: ignore
+        for method in openapi_schema.get("paths") or {}:
             for e in http_methods:
                 try:  # do not try-except outside the for loop, cause some method has no 422
                     del openapi_schema["paths"][method][e]["responses"]["422"]
                 except KeyError:
                     pass
-        for schema in list(openapi_schema.get("components").get("schemas")):  # type: ignore
+        components: Dict[str, Any] = openapi_schema.get("components") or {}
+        schemas: Dict[str, Any] = components.get("schemas") or {}
+        for schema in list(schemas):
             if schema in ("HTTPValidationError", "ValidationError"):
-                del openapi_schema["components"]["schemas"][schema]
-        openapi_schema["info"].update(
+                try:
+                    del schemas[schema]
+                except KeyError:
+                    pass
+        info: Dict[str, Any] = openapi_schema.get("info", {})
+        info.update(
             {
                 "description": settings.APP_DESC,
                 "license": settings.APP_LICENSE,
@@ -83,7 +90,7 @@ class AppInit:
         # )
 
         @self.__app__.middleware("http")
-        async def add_request_id(req: Request, call_next):
+        async def add_request_id(req: Request, call_next: Callable[[Request], Any]) -> Response:
             req.state.request_id = str(uuid1())
             resp: Response = await call_next(req)
             resp.headers["X-Request-ID"] = req.state.request_id

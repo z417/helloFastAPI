@@ -1,44 +1,46 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import SMALLINT, TIMESTAMP, ForeignKey, func
-from sqlalchemy.orm import Mapped, declared_attr, mapped_column
+from sqlalchemy.orm import Mapped, declarative_mixin, declared_attr, mapped_column
 
 
+@declarative_mixin
 class CommonAttr:
-    @declared_attr  # type: ignore[override]
-    def __tablename__(cls) -> str:  # type: ignore[attr-defined]
-        return cls.__name__.lower()
-
     @declared_attr
+    @classmethod
     def created_by(cls) -> Mapped[Optional[UUID]]:
         return mapped_column(
             ForeignKey(
                 "users.uid",
-                name=f"fk_{cls.__tablename__}.created_by_on_users.uid",
+                name=f"fk_{getattr(cls, '__tablename__', cls.__name__.lower())}_created_by_on_users_uid",
             ),
             comment="creator",
         )
 
     @declared_attr
+    @classmethod
     def updated_by(cls) -> Mapped[Optional[UUID]]:
         return mapped_column(
             ForeignKey(
                 "users.uid",
-                name=f"fk_{cls.__tablename__}.updated_by_on_users.uid",
+                name=f"fk_{getattr(cls, '__tablename__', cls.__name__.lower())}_updated_by_on_users_uid",
             ),
             comment="updator",
         )
 
     @declared_attr
-    def created_at(cls) -> Mapped[TIMESTAMP]:
+    @classmethod
+    def created_at(cls) -> Mapped[datetime]:
         return mapped_column(
             TIMESTAMP(timezone=True),
             server_default=func.now(),
         )
 
     @declared_attr
-    def updated_at(cls) -> Mapped[TIMESTAMP]:
+    @classmethod
+    def updated_at(cls) -> Mapped[datetime]:
         return mapped_column(
             TIMESTAMP(timezone=True),
             server_default=func.now(),
@@ -46,7 +48,8 @@ class CommonAttr:
         )
 
     @declared_attr
-    def is_deleted(cls) -> Mapped[SMALLINT]:
+    @classmethod
+    def is_deleted(cls) -> Mapped[int]:
         return mapped_column(
             SMALLINT,
             default=0,  # "Not deleted" of logical
@@ -68,6 +71,8 @@ if __name__ == "__main__":
             primary_key=True,
         )
 
-    from sqlalchemy.schema import CreateTable
+    from typing import cast
 
-    print(CreateTable(User.__table__))  # type: ignore[arg-type]
+    from sqlalchemy.schema import CreateTable, Table
+
+    print(CreateTable(cast(Table, User.__table__)))

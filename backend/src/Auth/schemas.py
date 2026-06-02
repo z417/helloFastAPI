@@ -2,7 +2,7 @@ from datetime import date
 from typing import Optional
 from uuid import UUID
 
-from pydantic import EmailStr, Field, field_validator
+from pydantic import EmailStr, Field, field_serializer, field_validator
 
 from src.Auth.typed import _NameType
 from src.common import BaseModel
@@ -34,8 +34,8 @@ class SignupSchema(BaseModel):
             At least one special character.
         """,
     )
-    first_name: _NameType = Field(examples=["Yuri"])  # type: ignore
-    last_name: _NameType = Field(examples=["Zhong"])  # type: ignore
+    first_name: _NameType = Field(examples=["Yuri"])
+    last_name: _NameType = Field(examples=["Zhong"])
     gender: Optional[int] = Field(default=2, description="0 female, 1 male, 2 unknow")
     birthday: Optional[date] = None
     avatar: Optional[str] = Field(
@@ -46,7 +46,7 @@ class SignupSchema(BaseModel):
 
     @field_validator("password")
     @classmethod
-    def validate_password(cls, v):
+    def validate_password(cls, v) -> str:
         from src.settings import settings
 
         if settings.AUTH_STRONG_PASSWORD_CHECK:
@@ -62,8 +62,9 @@ class SignupSchema(BaseModel):
                 raise ValueError("Password must contain at least one special character")
         return v
 
-    class Config:
-        json_encoders = {EmailStr: lambda em: em.lower()}
+    @field_serializer("email")
+    def serialize_email(self, email: EmailStr) -> str:
+        return email.lower()
 
 
 class SignupResponseSchema(BaseModel):

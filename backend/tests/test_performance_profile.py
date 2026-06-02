@@ -61,8 +61,7 @@ async def test_concurrency_and_performance_switches_comparison():
     original_pool_mode = settings.DB_POOL_MODE
 
     # 初始化测试环境：清表与基础用户数据生成
-    e = get_async_engine()
-    engine = await e.__anext__()
+    engine = await get_async_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

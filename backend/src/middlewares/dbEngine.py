@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.types import ASGIApp
 
-asyncDbengine: AsyncEngine
+asyncDbengine: Optional[AsyncEngine] = None
 
 
 class DBEngineMiddleware(BaseHTTPMiddleware):
@@ -21,7 +21,7 @@ class DBEngineMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         db_url: Union[str, URL],
         custom_engine: Optional[AsyncEngine] = None,
-        engine_args: Union[Dict, None] = None,
+        engine_args: Optional[Dict[str, Any]] = None,
         expire_on_commit: bool = False,
     ) -> None:
         super().__init__(app)
@@ -61,12 +61,13 @@ if __name__ == "__main__":
         db_url=DATABASE_URL,
         engine_args={
             "echo": True,
-            "future": True,  # Uses SQLAlchemy 2.0 API, backwards compatible
             "connect_args": {"check_same_thread": False},
         },
     )
 
     async def test_query():
+        if asyncDbengine is None:
+            raise RuntimeError("Database engine has not been initialized.")
         async with asyncDbengine.connect() as conn:
             res = await conn.execute(text("select 'hello world';"))
         print(res.all())

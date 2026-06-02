@@ -57,7 +57,7 @@ async def create_refresh_token(data: dict) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-async def renew_token_via_refresh(refresh_token: str, session: AsyncSession) -> Union[str, HTTPException]:
+async def renew_token_via_refresh(refresh_token: str, session: AsyncSession) -> str:
     try:
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
         if payload["scope"] != "refresh_token":

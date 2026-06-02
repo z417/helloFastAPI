@@ -2,17 +2,12 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
+from typing import Optional
 from uuid import UUID, uuid4
 
 from cacheout import LFUCache
-
-from src.utils import L
-
-nonce_cache = LFUCache()
-
-
 from fastapi import APIRouter, Depends, Request, Response, status
-from sqlalchemy import select, update
+from sqlalchemy import CursorResult, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -42,6 +37,9 @@ from src.common import (
     get_async_session,
 )
 from src.settings import settings
+from src.utils import L
+
+nonce_cache = LFUCache()
 
 router = APIRouter(
     prefix="/api/cinema",
@@ -208,11 +206,6 @@ async def update_cinema_config(
     return ResponseModel(data="success")
 
 
-from typing import Optional
-
-from sqlalchemy import func
-
-
 @router.get("/showtimes", response_model=ResponseModel[ShowtimeListResponseSchema])
 async def get_showtimes(
     date: Optional[str] = None,
@@ -325,7 +318,7 @@ async def create_booking_order(
         x_timestamp = request.headers.get("X-Timestamp")
         x_nonce = request.headers.get("X-Nonce")
 
-        if not all([x_timestamp, x_nonce]):
+        if x_timestamp is None or x_nonce is None:
             raise UnAuthenticatedException(message="接口安全验证失败，签名参数 Headers 缺失")
 
         # 1.1 校验签名时效性 (防并发重放攻击，限制 5 分钟误差内)
@@ -419,13 +412,13 @@ async def create_booking_order(
             .values(remaining_inventory=Showtime.remaining_inventory - 1, version=Showtime.version + 1)
         )
         update_res = await session.execute(stmt_update_showtime)
-        if update_res.rowcount == 0:
+        if isinstance(update_res, CursorResult) and update_res.rowcount == 0:
             raise ConflictException(message="购票人数较多，请稍后重试")
 
         # 乐观锁原子的占领座位状态 (status: 0 -> 1)
         stmt_update_seat = update(Seat).where(Seat.uid == seat.uid, Seat.status == 0).values(status=1, sold_to_user=current_user.uid)
         seat_update_res = await session.execute(stmt_update_seat)
-        if seat_update_res.rowcount == 0:
+        if isinstance(seat_update_res, CursorResult) and seat_update_res.rowcount == 0:
             raise ConflictException(message="该座位刚刚被其他用户占用了")
     else:
         # 4.2 悲观锁/无锁：内存中更新，SQLAlchemy 会在 commit 时进行 Flush

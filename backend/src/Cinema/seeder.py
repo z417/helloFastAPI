@@ -40,7 +40,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
         {
             "uid": uuid4().hex,
             "email": "admin@cinema.com",
-            "passwd": bcrypt.hashpw(b"admin12345", bcrypt.gensalt()).decode("utf-8"),
+            "password": bcrypt.hashpw(b"admin12345", bcrypt.gensalt()).decode("utf-8"),
             "admin": 1,
             "first_name": "Cinema",
             "last_name": "Admin",
@@ -60,7 +60,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
             {
                 "uid": uuid4().hex,
                 "email": f"user_{i}@test.com",
-                "passwd": hashed_passwd,
+                "password": hashed_passwd,
                 "admin": 0,
                 "first_name": f"user_{i}",
                 "last_name": "test",
@@ -77,7 +77,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
 
     sql_insert_user = text("""
         INSERT INTO users (uid, email, passwd, admin, first_name, last_name, gender, birthday, user_status, avatar, current_session_id, created_at, updated_at, is_deleted)
-        VALUES (:uid, :email, :passwd, :admin, :first_name, :last_name, :gender, :birthday, :user_status, :avatar, :current_session_id, :created_at, :updated_at, :is_deleted)
+        VALUES (:uid, :email, :password, :admin, :first_name, :last_name, :gender, :birthday, :user_status, :avatar, :current_session_id, :created_at, :updated_at, :is_deleted)
     """)
     await session.execute(sql_insert_user, user_list)
 
@@ -231,7 +231,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
 
         for temp in schedule_templates:
             # 100部电影顺序且均匀循环轮播播种
-            movie_idx = showtime_index % 100
+            movie_idx = showtime_index % len(m_uids)
 
             st_datetime = datetime(
                 year=target_date.year,
@@ -285,3 +285,19 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
 
     await session.execute(insert(Seat), seat_list)
     await session.commit()
+
+
+if __name__ == "__main__":
+    import asyncio
+    from contextlib import asynccontextmanager
+
+    async def main() -> None:
+        from src.common.dependencies import get_async_engine, get_async_session
+
+        engine = await get_async_engine()
+        async with asynccontextmanager(get_async_session)(engine) as session:
+            print("🚀 正在全面清洗库表，并注入高并发高密度种子数据...")
+            await run_reset_and_seed(session)
+            print("✨ 选座票仓数据播种成功！")
+
+    asyncio.run(main())

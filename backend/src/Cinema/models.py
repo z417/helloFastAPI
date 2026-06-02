@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID, uuid4
@@ -14,7 +15,7 @@ class Movie(Base, CommonAttr):
     电影数据表模型
     """
 
-    __tablename__ = "movie"  # type: ignore[override]
+    __tablename__ = "movie"
 
     uid: Mapped[UUID] = mapped_column(
         Uuid(native_uuid=True),
@@ -57,7 +58,7 @@ class CinemaRoom(Base, CommonAttr):
     影厅数据表模型
     """
 
-    __tablename__ = "cinema_room"  # type: ignore[override]
+    __tablename__ = "cinema_room"
 
     uid: Mapped[UUID] = mapped_column(
         Uuid(native_uuid=True),
@@ -82,7 +83,7 @@ class Showtime(Base, CommonAttr):
     放映场次与排片表模型 (高并发争抢核心)
     """
 
-    __tablename__ = "showtime"  # type: ignore[override]
+    __tablename__ = "showtime"
 
     uid: Mapped[UUID] = mapped_column(
         Uuid(native_uuid=True),
@@ -102,7 +103,7 @@ class Showtime(Base, CommonAttr):
         nullable=False,
         comment="关联影厅ID",
     )
-    start_time: Mapped[TIMESTAMP] = mapped_column(
+    start_time: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
         comment="放映时间",
@@ -132,7 +133,7 @@ class Seat(Base, CommonAttr):
     场次座位状态表模型 (细粒度占位)
     """
 
-    __tablename__ = "seat"  # type: ignore[override]
+    __tablename__ = "seat"
 
     uid: Mapped[UUID] = mapped_column(
         Uuid(native_uuid=True),
@@ -175,7 +176,7 @@ class TicketOrder(Base, CommonAttr):
     购票订单数据表模型
     """
 
-    __tablename__ = "ticket_order"  # type: ignore[override]
+    __tablename__ = "ticket_order"
 
     uid: Mapped[UUID] = mapped_column(
         Uuid(native_uuid=True),

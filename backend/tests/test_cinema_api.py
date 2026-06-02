@@ -1,3 +1,7 @@
+import uuid
+from datetime import datetime, timezone
+from hashlib import sha256
+
 import httpx
 import pytest
 import pytest_asyncio
@@ -10,8 +14,7 @@ from src.main import helloFastApi as app
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_database():
-    e = get_async_engine()
-    engine = await e.__anext__()
+    engine = await get_async_engine()
 
     # Create tables
     async with engine.begin() as conn:
@@ -63,9 +66,6 @@ def get_send_password(pwd: str) -> str:
 
 
 async def booking_order_adaptive(client, showtime_id, seat_id, user_token):
-    import uuid
-    from datetime import datetime, timezone
-    from hashlib import sha256
 
     from src.settings import settings
 
@@ -148,10 +148,6 @@ async def test_cinema_booking_flow():
         assert order_data["amount"] == showtime["price"], "Price mismatch"
 
 
-import uuid
-from hashlib import sha256
-
-
 @pytest.mark.asyncio
 async def test_admin_config_switches_combination():
     async with httpx.AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -221,11 +217,9 @@ async def test_admin_config_switches_combination():
 @pytest.mark.asyncio
 async def test_db_engine_singleton_and_hot_reload():
     # 1. 获取两次 Engine，验证它们是同一个单例对象 (未改变配置时)
-    engine_gen1 = get_async_engine()
-    engine1 = await engine_gen1.__anext__()
+    engine1 = await get_async_engine()
 
-    engine_gen2 = get_async_engine()
-    engine2 = await engine_gen2.__anext__()
+    engine2 = await get_async_engine()
 
     assert engine1 is engine2, "在配置未变更时，数据库引擎单例未能复用，导致长连接池失效"
 
@@ -238,8 +232,7 @@ async def test_db_engine_singleton_and_hot_reload():
         # 修改配置以触发热重载
         settings.DB_POOL_MODE = "null" if original_pool_mode != "null" else "queue"
 
-        engine_gen3 = get_async_engine()
-        engine3 = await engine_gen3.__anext__()
+        engine3 = await get_async_engine()
 
         assert engine3 is not engine1, "配置发生热变更后，引擎单例未能成功销毁并热重载重建"
     finally:
@@ -305,8 +298,7 @@ async def test_user_orders_and_timing_checks():
         assert order["amount"] == showtime["price"]
 
         # 6. 特别注入：构造一个“上映前2分钟（不足5分钟）”的放映场次，测试购票API拦截行为
-        e = get_async_engine()
-        engine = await e.__anext__()
+        engine = await get_async_engine()
         session_gen = get_async_session(engine)
         session = await session_gen.__anext__()
 

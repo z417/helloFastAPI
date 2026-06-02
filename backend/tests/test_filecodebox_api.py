@@ -39,8 +39,7 @@ def get_send_password(pwd: str) -> str:
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_filebox_database():
-    e = get_async_engine()
-    engine = await e.__anext__()
+    engine = await get_async_engine()
 
     # 物理建表
     async with engine.begin() as conn:

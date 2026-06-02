@@ -1,6 +1,7 @@
 from typing import Generic, Optional, TypeVar
 
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ConfigDict
 
 
 def camel(snake_case: str) -> str:
@@ -9,10 +10,7 @@ def camel(snake_case: str) -> str:
 
 
 class BaseModel(PydanticBaseModel):
-    class Config:
-        # alias_generator = camel  # disabled by swagger Authorize not work
-        # allow_population_by_field_name = True
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 DataT = TypeVar("DataT")

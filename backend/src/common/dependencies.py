@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import AsyncGenerator, Union
+from typing import AsyncGenerator, Optional, Tuple
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
@@ -9,14 +9,14 @@ from sqlalchemy.pool import NullPool
 from src.settings import settings
 from src.utils import L
 
-_engine: Union[AsyncEngine, None] = None
-_current_pool_mode: Union[str, None] = None
-_current_db_url: Union[str, None] = None
-_last_db_file_stat: Union[tuple, None] = None
+_engine: Optional[AsyncEngine] = None
+_current_pool_mode: Optional[str] = None
+_current_db_url: Optional[str] = None
+_last_db_file_stat: Optional[Tuple[float, int, int]] = None
 _engine_lock = asyncio.Lock()
 
 
-async def get_async_engine() -> AsyncGenerator[AsyncEngine, None]:
+async def get_async_engine() -> AsyncEngine:
     global _engine, _current_pool_mode, _current_db_url, _last_db_file_stat
 
     # 物理提取 SQLite 文件路径（如果适用）
@@ -71,10 +71,10 @@ async def get_async_engine() -> AsyncGenerator[AsyncEngine, None]:
                 **settings.ENGINE_ARGS,
             )
 
-    yield _engine
+    return _engine
 
 
-async def get_async_session(engine=Depends(get_async_engine)) -> AsyncGenerator[AsyncSession, None]:
+async def get_async_session(engine: AsyncEngine = Depends(get_async_engine)) -> AsyncGenerator[AsyncSession, None]:
     session = AsyncSession(engine, autoflush=True, expire_on_commit=False)
     try:
         yield session
@@ -83,22 +83,21 @@ async def get_async_session(engine=Depends(get_async_engine)) -> AsyncGenerator[
 
 
 if __name__ == "__main__":
+    from contextlib import asynccontextmanager
+
     from sqlalchemy import text
 
     async def test_engine():
-        e = get_async_engine()
-        engine = await e.__anext__()
+        engine = await get_async_engine()
         async with engine.connect() as conn:
             res = await conn.execute(text("select 'hello world';"))
         print(res.all())
 
     async def test_session():
-        e = get_async_engine()
-        engine = await e.__anext__()
-        session_gen = get_async_session(engine)
-        session = await session_gen.__anext__()
-        res = await session.execute(text("select 'hello fastapi';"))
-        print(res.all())
+        engine = await get_async_engine()
+        async with asynccontextmanager(get_async_session)(engine) as session:
+            res = await session.execute(text("select 'hello fastapi';"))
+            print(res.all())
 
     import asyncio
 

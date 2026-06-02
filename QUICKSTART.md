@@ -44,7 +44,7 @@ bun run server.js
 uv sync --no-dev
 
 # 初始化生产 SQLite 数据库并导入种子数据
-uv run python -c "from src.Cinema.seeder import run_reset_and_seed; import asyncio; from src.common.dependencies import get_async_engine; e=get_async_engine(); engine=asyncio.run(e.__anext__()); from src.common.dependencies import get_async_session; s=get_async_session(engine); session=asyncio.run(s.__anext__()); asyncio.run(run_reset_and_seed(session))"
+uv run python -m src.Cinema.seeder
 
 # 多进程无热载启动后端
 uv run uvicorn src.main:helloFastApi --workers 4
@@ -223,7 +223,7 @@ docker compose build backend
 docker compose up -d --no-deps backend
 
 # 容器内手动还原初始化数据库并导入种子数据
-docker compose exec backend uv run python -c "from src.Cinema.seeder import run_reset_and_seed; import asyncio; from src.common.dependencies import get_async_engine; e=get_async_engine(); engine=asyncio.run(e.__anext__()); from src.common.dependencies import get_async_session; s=get_async_session(engine); session=asyncio.run(s.__anext__()); asyncio.run(run_reset_and_seed(session))"
+docker compose exec backend uv run python -m src.Cinema.seeder
 ```
 
 ### 2.8 🚀 操作系统级高并发优化 (OS Tweaks)

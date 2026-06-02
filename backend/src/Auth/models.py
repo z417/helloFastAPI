@@ -1,18 +1,11 @@
+from datetime import date
 from json import dumps
 from re import match
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import (
-    CHAR,
-    DATE,
-    SMALLINT,
-    TEXT,
-    VARCHAR,
-    TypeDecorator,
-    UniqueConstraint,
-    Uuid,
-)
+import bcrypt
+from sqlalchemy import CHAR, DATE, SMALLINT, TEXT, VARCHAR, Dialect, TypeDecorator, UniqueConstraint, Uuid
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
@@ -24,9 +17,6 @@ class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 
-import bcrypt
-
-
 class PasswordT(TypeDecorator):
     """
     使用原生 bcrypt 极速安全散列存储密码
@@ -34,7 +24,7 @@ class PasswordT(TypeDecorator):
 
     impl = CHAR(60)
 
-    def process_bind_param(self, value: str, dialect):
+    def process_bind_param(self, value: Optional[Any], dialect: Dialect) -> Any:
         if not value:
             return value
         import re
@@ -47,7 +37,7 @@ class PasswordT(TypeDecorator):
         salt = bcrypt.gensalt()
         return bcrypt.hashpw(value.encode("utf-8"), salt).decode("utf-8")
 
-    def process_result_value(self, value, dialect):
+    def process_result_value(self, value, dialect: Dialect) -> Optional[str]:
         return value
 
 
@@ -60,7 +50,7 @@ class User(Base, CommonAttr):
         primary_key=True,
         default=uuid4,
     )
-    email: Mapped[VARCHAR] = mapped_column(
+    email: Mapped[str] = mapped_column(
         VARCHAR(50),
         index=True,
         nullable=False,
@@ -73,37 +63,37 @@ class User(Base, CommonAttr):
             raise ValueError("failed on email validation")
         return addr
 
-    password: Mapped[CHAR] = mapped_column(
+    password: Mapped[str] = mapped_column(
         "passwd",
-        PasswordT,
+        PasswordT(),
     )
 
-    def verify_passwd(self, passwd) -> bool:
+    def verify_passwd(self, passwd: str) -> bool:
         try:
             return bcrypt.checkpw(passwd.encode("utf-8"), self.password.encode("utf-8"))
         except Exception:
             return False
 
-    admin: Mapped[SMALLINT] = mapped_column(
+    admin: Mapped[int] = mapped_column(
         SMALLINT,
         default=0,  # common user
         comment="0 common user,1 administrator, 2 guest",
     )
-    first_name: Mapped[VARCHAR] = mapped_column(VARCHAR(50))
-    last_name: Mapped[VARCHAR] = mapped_column(VARCHAR(50))
-    gender: Mapped[SMALLINT] = mapped_column(
+    first_name: Mapped[str] = mapped_column(VARCHAR(50))
+    last_name: Mapped[str] = mapped_column(VARCHAR(50))
+    gender: Mapped[int] = mapped_column(
         SMALLINT,
         default=2,  # unknow
         comment="0 female,1 male, 2 unknow",
     )
-    birthday: Mapped[Optional[DATE]] = mapped_column(DATE, comment="user's birthday", nullable=True)
-    user_status: Mapped[SMALLINT] = mapped_column(SMALLINT, default=0, comment="0 normal,1 abnormal, 2 locked")
-    avatar: Mapped[Optional[TEXT]] = mapped_column(
+    birthday: Mapped[Optional[date]] = mapped_column(DATE, comment="user's birthday", nullable=True)
+    user_status: Mapped[int] = mapped_column(SMALLINT, default=0, comment="0 normal,1 abnormal, 2 locked")
+    avatar: Mapped[Optional[str]] = mapped_column(
         TEXT,
         nullable=True,
         comment="user avatar, base64 encode",
     )
-    current_session_id: Mapped[Optional[VARCHAR]] = mapped_column(
+    current_session_id: Mapped[Optional[str]] = mapped_column(
         VARCHAR(100),
         nullable=True,
         comment="current session id for single sign-on constraint",
@@ -121,7 +111,7 @@ if __name__ == "__main__":
     """Usage example"""
     import asyncio
     from contextlib import asynccontextmanager
-    from typing import AsyncContextManager
+    from typing import AsyncGenerator
 
     from sqlalchemy.ext.asyncio import AsyncEngine
     from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -143,12 +133,12 @@ if __name__ == "__main__":
             await conn.run_sync(User.metadata.create_all, checkfirst=True)
 
     @asynccontextmanager
-    async def create_session(engine: AsyncEngine) -> AsyncContextManager[AsyncSession]:
-        s = AsyncSession(engine)
-        try:
-            yield s
-        finally:
-            await s.close()
+    async def create_session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
+        async with AsyncSession(engine) as s:
+            try:
+                yield s
+            finally:
+                await s.close()
 
     async def insert_demo(session: AsyncSession) -> None:
         admin_info = {
@@ -169,17 +159,19 @@ if __name__ == "__main__":
         session.add_all([admin, common_user])
         await session.commit()
 
-    async def select_demo(session: AsyncSession) -> User:
+    async def select_demo(session: AsyncSession) -> Optional[User]:
         from sqlalchemy import select
 
         stmt = select(User).where(User.first_name == "common", User.is_deleted == 0)
-        pick_user: User = (await session.execute(stmt)).scalar_one_or_none()
-        print(pick_user)
-        print(await pick_user.awaitable_attrs.password)
+        pick_user = (await session.execute(stmt)).scalar_one_or_none()
+        if pick_user:
+            print(pick_user)
+            #  修复：password 是普通列，直接读取即可，不需要且不能使用 await
+            print(pick_user.password)
         return pick_user
 
     async def update_demo(session: AsyncSession, u: User) -> None:
-        from sqlalchemy import update
+        from sqlalchemy import CursorResult, update
 
         # update 1
         u.password = "common54321"
@@ -190,7 +182,8 @@ if __name__ == "__main__":
         # update 2
         stmt = update(User).where(User.first_name == "common").values(gender=1).execution_options(synchronize_session="auto")
         up_user = await session.execute(stmt)
-        print(up_user.rowcount)
+        if isinstance(up_user, CursorResult):
+            print(up_user.rowcount)
         await session.commit()
 
     async def test_models():
@@ -199,7 +192,8 @@ if __name__ == "__main__":
         async with create_session(engine) as session:
             await insert_demo(session)
             pick_user = await select_demo(session)
-            await update_demo(session, pick_user)
+            if pick_user:  # 类型守卫：确保不为 None 再传给 update_demo
+                await update_demo(session, pick_user)
         await engine.dispose()
 
     asyncio.run(test_models())
