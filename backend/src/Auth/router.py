@@ -8,7 +8,8 @@ from src.Auth.crud import create_user, get_user_by_email
 from src.Auth.dependencies import authenticate_user, create_refresh_token, create_token, get_current_user, renew_token_via_refresh
 from src.Auth.models import User
 from src.Auth.schemas import ProfileResponseSchema, RenewTokenResponseSchema, SignupResponseSchema, SignupSchema, TokenResponseSchema
-from src.common import ResponseModel, get_async_session
+from src.common import ResponseModel
+from src.common.dependencies import get_async_session
 from src.utils import L
 
 

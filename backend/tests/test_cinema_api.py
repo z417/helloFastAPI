@@ -7,7 +7,9 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport
 
-from src.Auth.models import Base, User
+from src.Auth import User, auth_settings
+from src.Cinema import cinema_settings
+from src.common import Base
 from src.common.dependencies import get_async_engine, get_async_session
 from src.main import helloFastApi as app
 
@@ -38,9 +40,8 @@ async def setup_database():
 
 
 def get_send_password(pwd: str) -> str:
-    from src.settings import settings
 
-    if settings.BOOKING_SM4_PASSWORD_ENCRYPT:
+    if auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT:
         import os
         import time
 
@@ -48,7 +49,7 @@ def get_send_password(pwd: str) -> str:
         from cryptography.hazmat.primitives import padding
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-        key = settings.BOOKING_SM4_KEY.encode()
+        key = auth_settings.BOOKING_SM4_KEY.encode()
         iv = os.urandom(16)  # 生成 16 字节随机 IV
 
         # 内嵌 13 位毫秒时间戳
@@ -67,24 +68,22 @@ def get_send_password(pwd: str) -> str:
 
 async def booking_order_adaptive(client, showtime_id, seat_id, user_token):
 
-    from src.settings import settings
-
     headers = {"Authorization": f"Bearer {user_token}"}
     body = {"showtime_id": str(showtime_id), "seat_id": str(seat_id)}
 
-    if settings.BOOKING_SIGNATURE_CHECK or settings.BOOKING_SM3_SIGNATURE_CHECK:
+    if cinema_settings.BOOKING_SIGNATURE_CHECK or cinema_settings.BOOKING_SM3_SIGNATURE_CHECK:
         timestamp = str(int(datetime.now(timezone.utc).timestamp() * 1000))
         nonce = str(uuid.uuid4())
         headers["X-Timestamp"] = timestamp
         headers["X-Nonce"] = nonce
 
-        secret_key = settings.BOOKING_SIGNATURE_SECRET
+        secret_key = cinema_settings.BOOKING_SIGNATURE_SECRET
         sig_payload = f"{showtime_id}{seat_id}{timestamp}{nonce}{secret_key}"
 
-        if settings.BOOKING_SIGNATURE_CHECK:
+        if cinema_settings.BOOKING_SIGNATURE_CHECK:
             body["signature"] = sha256(sig_payload.encode()).hexdigest()
 
-        if settings.BOOKING_SM3_SIGNATURE_CHECK:
+        if cinema_settings.BOOKING_SM3_SIGNATURE_CHECK:
             from cryptography.hazmat.primitives import hashes
 
             h = hashes.Hash(hashes.SM3())

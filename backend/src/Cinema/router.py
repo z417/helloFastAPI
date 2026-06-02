@@ -12,8 +12,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from src.Auth import User, auth_settings
 from src.Auth.dependencies import get_current_user
-from src.Auth.models import User
+from src.Cinema.config import cinema_settings
 from src.Cinema.models import CinemaRoom, Movie, Seat, Showtime, TicketOrder
 from src.Cinema.schemas import (
     ConfigResponseSchema,
@@ -34,9 +35,9 @@ from src.common import (
     NotFoundException,
     ResponseModel,
     UnAuthenticatedException,
-    get_async_session,
 )
-from src.settings import settings
+from src.common.dependencies import get_async_session
+from src.settings import ENV_FILE, settings
 from src.utils import L
 
 nonce_cache = LFUCache()
@@ -101,13 +102,13 @@ async def get_cinema_config(response: Response) -> ResponseModel:
 
     data = ConfigResponseSchema(
         pool_mode=settings.DB_POOL_MODE,
-        lock_mode=settings.BOOKING_LOCK_MODE,
-        slow_query=settings.CINEMA_SLOW_QUERY,
-        signature_check=settings.BOOKING_SIGNATURE_CHECK,
-        signature_secret=settings.BOOKING_SIGNATURE_SECRET,
-        signature_sm3_check=settings.BOOKING_SM3_SIGNATURE_CHECK,
-        sm4_password_encrypt=settings.BOOKING_SM4_PASSWORD_ENCRYPT,
-        sm4_key=settings.BOOKING_SM4_KEY,
+        lock_mode=cinema_settings.BOOKING_LOCK_MODE,
+        slow_query=cinema_settings.CINEMA_SLOW_QUERY,
+        signature_check=cinema_settings.BOOKING_SIGNATURE_CHECK,
+        signature_secret=cinema_settings.BOOKING_SIGNATURE_SECRET,
+        signature_sm3_check=cinema_settings.BOOKING_SM3_SIGNATURE_CHECK,
+        sm4_password_encrypt=auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT,
+        sm4_key=auth_settings.BOOKING_SM4_KEY,
     )
 
     return ResponseModel(data=data)
@@ -146,15 +147,15 @@ async def update_cinema_config(
 
     # 1. 内存热重载
     settings.DB_POOL_MODE = req.pool_mode
-    settings.BOOKING_LOCK_MODE = req.lock_mode
-    settings.CINEMA_SLOW_QUERY = req.slow_query
-    settings.BOOKING_SIGNATURE_CHECK = req.signature_check
-    settings.BOOKING_SM3_SIGNATURE_CHECK = req.signature_sm3_check
-    settings.BOOKING_SM4_PASSWORD_ENCRYPT = req.sm4_password_encrypt
+    cinema_settings.BOOKING_LOCK_MODE = req.lock_mode
+    cinema_settings.CINEMA_SLOW_QUERY = req.slow_query
+    cinema_settings.BOOKING_SIGNATURE_CHECK = req.signature_check
+    cinema_settings.BOOKING_SM3_SIGNATURE_CHECK = req.signature_sm3_check
+    auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT = req.sm4_password_encrypt
 
     # 2. 硬盘 .env 同步持久化增量覆盖写入 (只替换或追加本次更新的变量，保留原文件的其他内容及注释)
     try:
-        env_path = Path(settings.ENV_FILE)
+        env_path = Path(ENV_FILE)
         env_path.parent.mkdir(parents=True, exist_ok=True)
 
         cinema_keys = {
@@ -221,7 +222,7 @@ async def get_showtimes(
     排片场次联合检索查询接口 (高频读，支持慢 SQL 控制开关、完全数据库层过滤及分页查询)
     """
     # 模拟经典慢 SQL 性能瓶颈 (通过配置 CINEMA_SLOW_QUERY 控制)
-    if settings.CINEMA_SLOW_QUERY:
+    if cinema_settings.CINEMA_SLOW_QUERY:
         await asyncio.sleep(0.5)  # 注入 500ms 并发排队挂起延迟，模拟无索引下的表死锁/大表模糊扫描
 
     now_plus_5m = datetime.now() + timedelta(minutes=5)
@@ -314,7 +315,7 @@ async def create_booking_order(
     并发选座购票下单接口 (下单即代表购票成功，包含接口数字签名时效校验与唯一索引幂等处理)
     """
     # ==================== Step 1: 签名安全校验 (防恶意篡改与大并发下生成算法练习) ====================
-    if settings.BOOKING_SIGNATURE_CHECK or settings.BOOKING_SM3_SIGNATURE_CHECK:
+    if cinema_settings.BOOKING_SIGNATURE_CHECK or cinema_settings.BOOKING_SM3_SIGNATURE_CHECK:
         x_timestamp = request.headers.get("X-Timestamp")
         x_nonce = request.headers.get("X-Nonce")
 
@@ -331,11 +332,11 @@ async def create_booking_order(
             raise BadRequestException(message="非法的时间戳格式")
 
         # 构造签名核心负载
-        secret_key = settings.BOOKING_SIGNATURE_SECRET
+        secret_key = cinema_settings.BOOKING_SIGNATURE_SECRET
         sig_payload = f"{req.showtime_id}{req.seat_id}{x_timestamp}{x_nonce}{secret_key}"
 
         # 1.2 常规 SHA-256 签名正交校验 (挪入 Body 传参的 signature)
-        if settings.BOOKING_SIGNATURE_CHECK:
+        if cinema_settings.BOOKING_SIGNATURE_CHECK:
             if not req.signature:
                 raise UnAuthenticatedException(message="接口安全验证失败，SHA-256 签名参数 signature 缺失")
             computed_sig = sha256(sig_payload.encode()).hexdigest()
@@ -343,7 +344,7 @@ async def create_booking_order(
                 raise UnAuthenticatedException(message="接口安全验证未通过，常规数字签名校验失败")
 
         # 1.3 国密 SM3 签名正交校验 (占领 Header 的 X-Signature)
-        if settings.BOOKING_SM3_SIGNATURE_CHECK:
+        if cinema_settings.BOOKING_SM3_SIGNATURE_CHECK:
             x_signature = request.headers.get("X-Signature")
             if not x_signature:
                 raise UnAuthenticatedException(message="接口安全验证失败，国密 SM3 签名 Headers X-Signature 缺失")
@@ -360,7 +361,7 @@ async def create_booking_order(
             raise UnAuthenticatedException(message="接口安全验证失败，该签名已被消费，请勿发起重放请求")
         nonce_cache.set(x_nonce, 1, ttl=300)
 
-    lock_mode = settings.BOOKING_LOCK_MODE.lower()
+    lock_mode = cinema_settings.BOOKING_LOCK_MODE.lower()
 
     # ==================== Step 2: 根据高并发锁模式，查询场次与座位 ====================
     # 悲观锁追加 WITH FOR UPDATE 行排他锁；无锁/乐观锁使用普通查询，消除重复分支

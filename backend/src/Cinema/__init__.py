@@ -1,4 +1,4 @@
+from src.Cinema.config import cinema_settings
 from src.Cinema.models import CinemaRoom, Movie, Seat, Showtime, TicketOrder
-from src.Cinema.router import router as cinema_router
 
-__all__ = ["cinema_router", "Movie", "CinemaRoom", "Showtime", "Seat", "TicketOrder"]
+__all__ = ["Movie", "CinemaRoom", "Showtime", "Seat", "TicketOrder", "cinema_settings"]

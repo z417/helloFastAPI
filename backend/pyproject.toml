@@ -2,7 +2,7 @@
 name = "helloFastApi"
 version = "1.0.0"
 description = "A demo for fastapi"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "sqlalchemy[asyncio]>=2.0.50",
     "fastapi>=0.136.3",
@@ -33,16 +33,22 @@ exclude = [
     ".venv",
     "build",
     "dist",
+    ".pytest_cache",
+    "__pypackages__",
 ]
 
+[tool.ruff.lint]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+line-ending = "auto"
 
 [tool.pytest.ini_options]
-filterwarnings = [
-    "ignore:Support for class-based `config` is deprecated:DeprecationWarning",
-    "ignore:'crypt' is deprecated:DeprecationWarning",
-    "ignore:`json_encoders` is deprecated:DeprecationWarning",
-    "ignore:The default datetime adapter is deprecated:DeprecationWarning"
-]
+testpaths = ["tests"]
+pythonpath = ["src"]
 
-[tool.pyright]
-extraPaths = ["."]
+[tool.pyrefly]
+project_includes = ["**/*.py"]
+project_excludes = ["**/.[!/.]*"]
+search_path = ["."]

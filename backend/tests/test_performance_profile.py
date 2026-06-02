@@ -6,14 +6,16 @@ import pytest
 from httpx import ASGITransport
 from sqlalchemy import select
 
-from src.Auth.models import Base, User
+from src.Auth import User, auth_settings
+from src.Cinema import cinema_settings
+from src.common import Base
 from src.common.dependencies import get_async_engine, get_async_session
 from src.main import helloFastApi as app
 from src.settings import settings
 
 
 def get_send_password(pwd: str) -> str:
-    if settings.BOOKING_SM4_PASSWORD_ENCRYPT:
+    if auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT:
         import os
         import time
 
@@ -21,7 +23,7 @@ def get_send_password(pwd: str) -> str:
         from cryptography.hazmat.primitives import padding
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-        key = settings.BOOKING_SM4_KEY.encode()
+        key = auth_settings.BOOKING_SM4_KEY.encode()
         iv = os.urandom(16)  # 生成 16 字节随机 IV
 
         # 内嵌 13 位毫秒时间戳
@@ -57,7 +59,7 @@ async def test_concurrency_and_performance_switches_comparison():
     print("=" * 80)
 
     # 1. 强行在全局 settings 中初始化，避免测试间共享状态污染
-    settings.BOOKING_SIGNATURE_CHECK = False
+    cinema_settings.BOOKING_SIGNATURE_CHECK = False
     original_pool_mode = settings.DB_POOL_MODE
 
     # 初始化测试环境：清表与基础用户数据生成

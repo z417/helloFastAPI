@@ -3,7 +3,12 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import SMALLINT, TIMESTAMP, ForeignKey, func
-from sqlalchemy.orm import Mapped, declarative_mixin, declared_attr, mapped_column
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_mixin, declared_attr, mapped_column
+
+
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
 
 
 @declarative_mixin
@@ -59,11 +64,6 @@ class CommonAttr:
 
 if __name__ == "__main__":
     """Usage example"""
-    from sqlalchemy.ext.asyncio import AsyncAttrs
-    from sqlalchemy.orm import DeclarativeBase
-
-    class Base(AsyncAttrs, DeclarativeBase):
-        pass
 
     class User(Base, CommonAttr):
         __tablename__ = "users"

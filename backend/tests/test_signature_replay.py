@@ -7,14 +7,15 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport
 
-from src.Auth.models import Base, User
+from src.Auth import User, auth_settings
+from src.Cinema import cinema_settings
+from src.common import Base
 from src.common.dependencies import get_async_engine, get_async_session
 from src.main import helloFastApi as app
-from src.settings import settings
 
 
 def get_send_password(pwd: str) -> str:
-    if settings.BOOKING_SM4_PASSWORD_ENCRYPT:
+    if auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT:
         import os
         import time
 
@@ -22,7 +23,7 @@ def get_send_password(pwd: str) -> str:
         from cryptography.hazmat.primitives import padding
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-        key = settings.BOOKING_SM4_KEY.encode()
+        key = auth_settings.BOOKING_SM4_KEY.encode()
         iv = os.urandom(16)  # 生成 16 字节随机 IV
 
         # 内嵌 13 位毫秒时间戳
@@ -104,7 +105,7 @@ async def test_signature_anti_replay():
             # 5. 生成合法的数字签名，模拟第一次正常下单购买 seat1
             timestamp = str(int(datetime.now(timezone.utc).timestamp() * 1000))
             nonce = str(uuid.uuid4())
-            secret_key = settings.BOOKING_SIGNATURE_SECRET
+            secret_key = cinema_settings.BOOKING_SIGNATURE_SECRET
 
             sig_payload = f"{showtime_id}{seat1_id}{timestamp}{nonce}{secret_key}"
             signature = sha256(sig_payload.encode()).hexdigest()
@@ -184,7 +185,7 @@ async def test_sm3_signature_verification():
             assert r_no_sig.status_code == 401
 
             # 5. 携带正确的国密签名下单，预期成功 201
-            secret_key = settings.BOOKING_SIGNATURE_SECRET
+            secret_key = cinema_settings.BOOKING_SIGNATURE_SECRET
             sig_payload = f"{showtime_id}{seat_id}{timestamp}{nonce}{secret_key}"
 
             from cryptography.hazmat.primitives import hashes

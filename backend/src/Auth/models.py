@@ -6,15 +6,10 @@ from uuid import UUID, uuid4
 
 import bcrypt
 from sqlalchemy import CHAR, DATE, SMALLINT, TEXT, VARCHAR, Dialect, TypeDecorator, UniqueConstraint, Uuid
-from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
+from sqlalchemy.orm import Mapped, mapped_column, validates
 
-from src.common import CommonAttr
-
-
-class Base(AsyncAttrs, DeclarativeBase):
-    pass
+from src.common import Base, CommonAttr
 
 
 class PasswordT(TypeDecorator):

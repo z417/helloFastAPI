@@ -5,16 +5,16 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport
 
-from src.Auth.models import Base
+from src.Auth import auth_settings
+from src.common import Base
 from src.common.dependencies import get_async_engine
 from src.FileCodeBox.router import upload_ip_limit
 from src.main import helloFastApi as app
 
 
 def get_send_password(pwd: str) -> str:
-    from src.settings import settings
 
-    if settings.BOOKING_SM4_PASSWORD_ENCRYPT:
+    if auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT:
         import os
         import time
 
@@ -22,7 +22,7 @@ def get_send_password(pwd: str) -> str:
         from cryptography.hazmat.primitives import padding
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-        key = settings.BOOKING_SM4_KEY.encode()
+        key = auth_settings.BOOKING_SM4_KEY.encode()
         iv = os.urandom(16)
         timestamp_ms = str(int(time.time() * 1000))
         plain_payload = f"{timestamp_ms}:{pwd}"

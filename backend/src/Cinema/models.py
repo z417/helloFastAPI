@@ -6,8 +6,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import DECIMAL, INT, SMALLINT, TIMESTAMP, VARCHAR, ForeignKey, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.Auth.models import Base
-from src.common import CommonAttr
+from src.common import Base, CommonAttr
 
 
 class Movie(Base, CommonAttr):

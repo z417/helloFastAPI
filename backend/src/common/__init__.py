@@ -1,4 +1,3 @@
-from src.common.dependencies import get_async_engine, get_async_session
 from src.common.exceptions import (
     APIException,
     BadRequestException,
@@ -9,13 +8,14 @@ from src.common.exceptions import (
     UnAuthenticatedException,
     http_exception_handler,
 )
-from src.common.models import CommonAttr
+from src.common.models import Base, CommonAttr
 from src.common.schemas import BaseModel, ResponseModel
 
 __all__ = [
     "APIException",
     "BaseModel",
     "BadRequestException",
+    "Base",
     "CommonAttr",
     "ConflictException",
     "ForbiddenException",
@@ -24,6 +24,4 @@ __all__ = [
     "ResponseModel",
     "UnAuthenticatedException",
     "http_exception_handler",
-    "get_async_engine",
-    "get_async_session",
 ]

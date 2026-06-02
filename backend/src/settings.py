@@ -1,14 +1,13 @@
 from json import dumps, loads
 from pathlib import Path
-from typing import Union
 
 from starlette.config import Config, environ
 from starlette.datastructures import Secret
 
-ENV_FILE: Union[str, None] = environ.get("ENV_FILE")
-if not ENV_FILE:
-    print('-----ENV_FILE not specified, ".env" used as default-----')
-    ENV_FILE = ".env"
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE: str = environ.get("ENV_FILE", str(BACKEND_DIR / ".env"))
+if not environ.get("ENV_FILE"):
+    print(f"-----ENV_FILE not specified, {ENV_FILE} used as default-----")
 config = Config(ENV_FILE)
 
 
@@ -22,12 +21,12 @@ class Settings:
     APP_LICENSE = config(
         "APP_LICENSE",
         cast=loads,
-        default='{"name": "LGPL-3.0", "url": "https://www.gnu.org/licenses/gpl-3.0.txt"}',
+        default='{"name": "ENCL-1.0", "url": "file:///LICENSE"}',
     )
     APP_CONTACT = config(
         "APP_CONTACT",
         cast=loads,
-        default='{"name": "HZN", "url": "https://www.haozhinuo.com", "email": "zhongtuo@haozhinuo.com"}',
+        default='{"name": "HZN", "url": "https://www.haozhinuo.com", "email": "zhuwei@haozhinuo.com"}',
     )
     APP_RUN_LOG: str = config("APP_RUN_LOG", cast=str, default="logs/run.log")
     APP_LOG_LEVEL: str = config("APP_LOG_LEVEL", default="INFO")
@@ -44,31 +43,48 @@ class Settings:
     UVICORN_SSL_CERTFILE: str = config("UVICORN_SSL_CERTFILE", cast=str, default="")
     DB_URL = config("DB_URL", cast=Secret, default="sqlite+aiosqlite:///db.sqlite")
     ENGINE_ARGS = config("ENGINE_ARGS", cast=loads, default='{"future": true}')
-    ENV_FILE: str = ENV_FILE
 
-    # ===== 影院核心业务高并发与安全热配置 =====
+    # =====  =====
     DB_POOL_MODE: str = config("DB_POOL_MODE", cast=str, default="queue")  # 'queue' 启用连接池, 'null' 禁用
-    BOOKING_LOCK_MODE: str = config("BOOKING_LOCK_MODE", cast=str, default="pessimistic")  # 'none' 无锁, 'pessimistic' 悲观锁, 'optimistic' 乐观锁
-    CINEMA_SLOW_QUERY: bool = config("CINEMA_SLOW_QUERY", cast=bool, default=False)  # 慢查询开关
-    BOOKING_SIGNATURE_CHECK: bool = config("BOOKING_SIGNATURE_CHECK", cast=bool, default=False)  # 接口签名校验开关
-    BOOKING_SIGNATURE_SECRET: str = config("BOOKING_SIGNATURE_SECRET", cast=str, default="hello_cinema_range_secret_key")  # 签名秘钥，以.env配置优先级最高
-    BOOKING_SM3_SIGNATURE_CHECK: bool = config("BOOKING_SM3_SIGNATURE_CHECK", cast=bool, default=False)  # 接口国密SM3签名校验开关
-    BOOKING_SM4_PASSWORD_ENCRYPT: bool = config("BOOKING_SM4_PASSWORD_ENCRYPT", cast=bool, default=False)  # 登录密码国密SM4传输加密开关
-    BOOKING_SM4_KEY: str = config("BOOKING_SM4_KEY", cast=str, default="hello_cinema_sm4")  # SM4 对称加密密钥，必须为16字节
-    AUTH_STRONG_PASSWORD_CHECK: bool = config("AUTH_STRONG_PASSWORD_CHECK", cast=bool, default=False)  # 简单密码强度开关
 
 
 settings = Settings()
 
-env_path = Path(ENV_FILE)
-if not env_path.exists():
-    print(f'-----"{ENV_FILE}" not exists, initial once at 1st run time-----')
-    with env_path.open(mode="w+", encoding="utf-8") as f:
+
+def auto_generate_env_file() -> None:
+    """
+    自愈防线：聚合全局和各业务子模块配置，逆向生成 backend/.env 文件
+    """
+    env_path = Path(ENV_FILE)
+    if not env_path.exists():
+        print(f'-----"{ENV_FILE}" not exists, initial once at 1st run time-----')
+
+        # 动态延迟导入业务配置类，优雅防止循环引用
+        from src.Cinema.config import CinemaSettings
+
+        all_lines = []
+
+        # 1. 抽取全局核心基底
         for k in filter(lambda x: not x.startswith("__"), vars(Settings)):
             v = getattr(settings, k)
-            v = v if not isinstance(v, dict) else dumps(v)
-            f.write(f"{k}={v}\n")
-        f.flush()
+            v = v if not isinstance(v, (dict, list)) else dumps(v)
+            all_lines.append(f"{k}={v}")
+
+        # 2. 抽取并追加影院业务
+        for k in filter(lambda x: not x.startswith("__"), vars(CinemaSettings)):
+            if k in vars(Settings):
+                continue  # 过滤重复项
+            v = getattr(CinemaSettings, k)
+            v = v if not isinstance(v, (dict, list)) else dumps(v)
+            all_lines.append(f"{k}={v}")
+
+        with env_path.open(mode="w+", encoding="utf-8") as f:
+            f.write("\n".join(all_lines) + "\n")
+            f.flush()
+
+
+# 执行自愈防线
+auto_generate_env_file()
 
 if __name__ == "__main__":
     print(settings.APP_TITLE)

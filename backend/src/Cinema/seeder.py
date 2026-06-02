@@ -6,8 +6,9 @@ import bcrypt
 from sqlalchemy import delete, insert, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.Auth.models import Base, User
+from src.Auth.models import User
 from src.Cinema.models import CinemaRoom, Movie, Seat, Showtime, TicketOrder
+from src.common import Base
 
 
 async def run_reset_and_seed(session: AsyncSession) -> None:

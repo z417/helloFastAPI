@@ -6,15 +6,15 @@ import pytest_asyncio
 from httpx import ASGITransport
 from jose import jwt
 
+from src.Auth import auth_settings
 from src.Auth.config import ALGORITHM, SECRET_KEY
-from src.Auth.models import Base
+from src.common import Base
 from src.common.dependencies import get_async_engine
 from src.main import helloFastApi as app
-from src.settings import settings
 
 
 def get_send_password(pwd: str) -> str:
-    if settings.BOOKING_SM4_PASSWORD_ENCRYPT:
+    if auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT:
         import os
         import time
 
@@ -22,7 +22,7 @@ def get_send_password(pwd: str) -> str:
         from cryptography.hazmat.primitives import padding
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-        key = settings.BOOKING_SM4_KEY.encode()
+        key = auth_settings.BOOKING_SM4_KEY.encode()
         iv = os.urandom(16)  # 生成 16 字节随机 IV
 
         # 内嵌 13 位毫秒时间戳
@@ -59,14 +59,14 @@ async def test_signup_avatar_optional_and_password_validation():
         email = f"test_auth_api_{random.randint(1000, 9999)}@test.com"
 
         # 1. 简单密码开关为 False 时，注册简单密码，且不传头像 (avatar 设为 None / 可选)
-        settings.AUTH_STRONG_PASSWORD_CHECK = False
+        auth_settings.AUTH_STRONG_PASSWORD_CHECK = False
         payload1 = {"email": email, "password": "123", "first_name": "Auth", "last_name": "Test", "birthday": None, "avatar": None}
         r1 = await client.post("/api/auth/signup", json=payload1)
         assert r1.status_code == 201, f"简单密码且无头像注册失败: {r1.text}"
         assert r1.json()["data"]["email"] == email
 
         # 2. 强密码开关开启时，使用不达标的简单密码注册，应该被 422 拦截拒绝
-        settings.AUTH_STRONG_PASSWORD_CHECK = True
+        auth_settings.AUTH_STRONG_PASSWORD_CHECK = True
         email2 = f"test_auth_api_strong_{random.randint(1000, 9999)}@test.com"
         payload2 = {"email": email2, "password": "123", "first_name": "Auth", "last_name": "Strong", "birthday": None, "avatar": None}
         r2 = await client.post("/api/auth/signup", json=payload2)
@@ -78,7 +78,7 @@ async def test_signup_avatar_optional_and_password_validation():
         assert r3.status_code == 201, f"强密码开关开启时达标密码注册失败: {r3.text}"
 
         # 还原开关
-        settings.AUTH_STRONG_PASSWORD_CHECK = False
+        auth_settings.AUTH_STRONG_PASSWORD_CHECK = False
 
 
 @pytest.mark.asyncio
@@ -228,7 +228,7 @@ async def test_sm4_password_encryption_login():
         assert r_signup.status_code == 201
 
         # 2. 完全尊重并根据 .env 实际配置 switch 校验分支 or 非校验分支
-        if settings.BOOKING_SM4_PASSWORD_ENCRYPT:
+        if auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT:
             # 开启了 SM4 密码加密：明文登录应该被拦截失败（400）
             r_plain = await client.post("/api/auth/token", data={"username": email, "password": pwd})
             assert r_plain.status_code == 400

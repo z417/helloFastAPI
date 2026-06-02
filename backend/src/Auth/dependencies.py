@@ -16,10 +16,12 @@ from src.Auth.config import (
     REFRESH_TOKEN_EXPIRE_MINUTES,
     SECRET_KEY,
     TOKEN_URL,
+    auth_settings,
 )
 from src.Auth.crud import get_user_by_email
 from src.Auth.models import User
-from src.common import BadRequestException, get_async_session
+from src.common import BadRequestException
+from src.common.dependencies import get_async_session
 
 cache = LFUCache()
 
@@ -112,10 +114,9 @@ async def authenticate_user(
     form_data=Depends(OAuth2PasswordRequestForm),
     session=Depends(get_async_session),
 ) -> Union[User, HTTPException, BadRequestException]:
-    from src.settings import settings
 
     plain_password = form_data.password
-    if settings.BOOKING_SM4_PASSWORD_ENCRYPT:
+    if auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT:
         try:
             # 1. 提取物理 IV (前32个 Hex 字符) 与 密文 (32位之后)
             raw_password_hex = form_data.password.strip()
@@ -135,7 +136,7 @@ async def authenticate_user(
             from cryptography.hazmat.primitives import padding
             from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-            key = settings.BOOKING_SM4_KEY.encode()
+            key = auth_settings.BOOKING_SM4_KEY.encode()
             cipher = Cipher(algorithms.SM4(key), modes.CBC(iv), backend=default_backend())
             decryptor = cipher.decryptor()
             decrypted_padded = decryptor.update(ct) + decryptor.finalize()
