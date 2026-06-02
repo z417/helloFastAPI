@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🌌</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🌌</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Starry Cinema 星空影城在线订票系统</title>
     <!-- 引入中国大陆极速 CDN 镜像 -->
     <link href="https://registry.npmmirror.com/bootstrap/5.3.0/files/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://registry.npmmirror.com/@fortawesome/fontawesome-free/6.4.0/files/css/all.min.css" rel="stylesheet">
+    <link href="https://registry.npmmirror.com/@fortawesome/fontawesome-free/6.4.0/files/css/all.min.css"
+        rel="stylesheet">
     <!-- 引入国密算法核心库 -->
     <script src="https://registry.npmmirror.com/sm-crypto/0.3.12/files/dist/sm3.js"></script>
     <script src="https://registry.npmmirror.com/sm-crypto/0.3.12/files/dist/sm4.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <style>
         body {
             background-color: #0f172a;
@@ -18,11 +22,13 @@
             font-family: system-ui, -apple-system, sans-serif;
             min-height: 100vh;
         }
+
         .navbar-brand {
             font-weight: 800;
             letter-spacing: 1px;
             color: #38bdf8 !important;
         }
+
         .card {
             background-color: #1e293b;
             border: 1px solid #334155;
@@ -30,23 +36,28 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
         }
+
         .btn-primary {
             background-color: #0284c7;
             border-color: #0284c7;
         }
+
         .btn-primary:hover {
             background-color: #0369a1;
             border-color: #0369a1;
         }
+
         .movie-card:hover {
             transform: translateY(-5px);
             transition: transform 0.2s ease-in-out;
             border-color: #0284c7;
         }
+
         .movie-card.active {
             border-color: #38bdf8;
             box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
         }
+
         /* 座位网格样式 */
         .seat-grid {
             display: grid;
@@ -55,6 +66,7 @@
             margin: 20px auto;
             max-width: 600px;
         }
+
         .seat-item {
             width: 32px;
             height: 32px;
@@ -67,22 +79,26 @@
             user-select: none;
             transition: all 0.2s ease;
         }
+
         .seat-available {
             background-color: #475569;
             color: #cbd5e1;
             border: 1px solid #64748b;
         }
+
         .seat-available:hover {
             background-color: #0284c7;
             color: white;
             border-color: #38bdf8;
             transform: scale(1.1);
         }
+
         .seat-selected {
             background-color: #10b981 !important;
             color: white;
             border: 1px solid #34d399;
         }
+
         .seat-sold {
             background-color: #ef4444;
             color: #fee2e2;
@@ -90,6 +106,7 @@
             cursor: not-allowed;
             opacity: 0.6;
         }
+
         .cinema-screen {
             height: 8px;
             background: linear-gradient(to bottom, #38bdf8, transparent);
@@ -97,44 +114,51 @@
             margin-bottom: 25px;
             box-shadow: 0 4px 10px rgba(56, 189, 248, 0.4);
         }
+
         .badge-active {
             background-color: #10b981;
             color: white;
         }
+
         .badge-inactive {
             background-color: #ef4444;
             color: white;
         }
-        
+
         /* 零抖动与防闪烁渐入微动效 */
         #showtime-list-container {
             min-height: 280px;
             transition: opacity 0.3s ease-in-out;
         }
+
         #seat-grid-container {
             min-height: 220px;
             transition: opacity 0.3s ease-in-out;
         }
+
         .fade-in-up {
             animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
         @keyframes fadeInUp {
             from {
                 opacity: 0;
                 transform: translateY(15px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         /* 纯 CSS Tooltip 高清毛玻璃悬浮气泡 */
         .tooltip-box {
             position: relative;
             display: inline-block;
             cursor: help;
         }
+
         .tooltip-box .tooltip-text {
             visibility: hidden;
             width: 320px;
@@ -159,11 +183,13 @@
             pointer-events: none;
             font-size: 11px !important;
         }
+
         .tooltip-box:hover .tooltip-text {
             visibility: visible;
             opacity: 1;
             transform: translateX(-50%) translateY(-5px);
         }
+
         .tooltip-box .tooltip-text::after {
             content: "";
             position: absolute;
@@ -174,7 +200,7 @@
             border-style: solid;
             border-color: #475569 transparent transparent transparent;
         }
-        
+
         /* 弱密码 Chrome 修改提示物理屏蔽 */
         .hide-password {
             -webkit-text-security: disc !important;
@@ -189,11 +215,12 @@
             border-radius: 12px;
             transition: all 0.3s ease;
         }
+
         .lucky-promo-banner:hover {
             box-shadow: 0 0 25px rgba(168, 85, 247, 0.3) !important;
             border-color: rgba(168, 85, 247, 0.4) !important;
         }
-        
+
         /* 响应式弹性自适应 Toast 定位与自适应 */
         .responsive-toast-container {
             z-index: 2000;
@@ -204,39 +231,51 @@
             left: 50% !important;
             transform: translateX(-50%) !important;
         }
-        
+
         /* 🌌 宇航员头像趣味交互动画样式 */
         .animate-spin-slow {
             animation: spin 20s linear infinite;
             transform-origin: 50px 50px;
         }
+
         @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .astronaut-avatar-wrapper {
             background: radial-gradient(circle, rgba(15, 23, 42, 0.4) 0%, transparent 70%);
             border-radius: 50%;
             padding: 5px;
         }
-        
+
         /* 当密码输入框获得焦点且鼠标在其范围内(hover)时，触发高阶捂眼交互动画；一旦鼠标移出input，则放开捂眼，露出大眼睛跟随 */
         .card:has(#login-password:focus:hover) #astro-arm-left {
             transform: translate(16px, -24px) rotate(45deg) !important;
         }
+
         .card:has(#login-password:focus:hover) #astro-arm-right {
             transform: translate(-16px, -24px) rotate(-45deg) !important;
         }
+
         .card:has(#login-password:focus:hover) #astro-visor {
-            fill: #f97316 !important; /* 太空防护面罩亮起防护橙色 */
+            fill: #f97316 !important;
+            /* 太空防护面罩亮起防护橙色 */
             stroke: #fb923c !important;
         }
+
         .card:has(#login-password:focus:hover) #astro-eyes {
-            opacity: 0.15 !important; /* 眼睛变为极弱半透明的“偷看”状态，在小手后方极具隐蔽感 */
+            opacity: 0.15 !important;
+            /* 眼睛变为极弱半透明的“偷看”状态，在小手后方极具隐蔽感 */
         }
     </style>
 </head>
+
 <body>
 
     <!-- 导航栏 -->
@@ -245,8 +284,10 @@
             <a class="navbar-brand" href="#"><i class="fa-solid fa-meteor me-2 text-info"></i>STARRY CINEMA · 星穹影城</a>
             <div class="d-flex align-items-center">
                 <span id="user-info-text" class="text-secondary me-3">未登录</span>
-                <button id="profile-btn" class="btn btn-outline-info btn-sm me-2 d-none" onclick="toggleProfile()"><i class="fa-solid fa-user-astronaut me-1"></i>个人星海舱</button>
-                <button id="logout-btn" class="btn btn-outline-danger btn-sm d-none" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket me-1"></i>安全退出</button>
+                <button id="profile-btn" class="btn btn-outline-info btn-sm me-2 d-none" onclick="toggleProfile()"><i
+                        class="fa-solid fa-user-astronaut me-1"></i>个人星海舱</button>
+                <button id="logout-btn" class="btn btn-outline-danger btn-sm d-none" onclick="handleLogout()"><i
+                        class="fa-solid fa-right-from-bracket me-1"></i>安全退出</button>
             </div>
         </div>
     </nav>
@@ -259,74 +300,97 @@
                     <!-- 🌌 “不偷看密码”太空宇航员趣味交互舱 -->
                     <div class="text-center mb-3">
                         <div class="astronaut-avatar-wrapper position-relative d-inline-block">
-                            <svg class="astronaut-avatar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100px; height: 100px; overflow: visible;">
+                            <svg class="astronaut-avatar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"
+                                style="width: 100px; height: 100px; overflow: visible;">
                                 <!-- 宇航员背景微弱星云光环 -->
-                                <circle cx="50" cy="50" r="44" fill="rgba(56, 189, 248, 0.05)" stroke="rgba(56, 189, 248, 0.15)" stroke-width="1.5" stroke-dasharray="4 4" class="animate-spin-slow" />
-                                
+                                <circle cx="50" cy="50" r="44" fill="rgba(56, 189, 248, 0.05)"
+                                    stroke="rgba(56, 189, 248, 0.15)" stroke-width="1.5" stroke-dasharray="4 4"
+                                    class="animate-spin-slow" />
+
                                 <!-- 宇航服肩膀 -->
-                                <path d="M25 88 C25 72, 75 72, 75 88 Z" fill="#e2e8f0" stroke="#475569" stroke-width="2.5" />
+                                <path d="M25 88 C25 72, 75 72, 75 88 Z" fill="#e2e8f0" stroke="#475569"
+                                    stroke-width="2.5" />
                                 <!-- 宇航服胸前蓝光徽章 -->
-                                <circle cx="50" cy="80" r="5" fill="#38bdf8" class="animate-pulse" style="text-shadow: 0 0 8px #38bdf8;" />
-                                <rect x="42" y="78" width="16" height="4" rx="2" fill="none" stroke="#475569" stroke-width="1" />
-                                
+                                <circle cx="50" cy="80" r="5" fill="#38bdf8" class="animate-pulse"
+                                    style="text-shadow: 0 0 8px #38bdf8;" />
+                                <rect x="42" y="78" width="16" height="4" rx="2" fill="none" stroke="#475569"
+                                    stroke-width="1" />
+
                                 <!-- 宇航服太空头盔 -->
                                 <circle cx="50" cy="46" r="28" fill="#f8fafc" stroke="#475569" stroke-width="3" />
                                 <!-- 头盔上的小天线 -->
                                 <path d="M50 18 L50 8" stroke="#475569" stroke-width="2.5" stroke-linecap="round" />
                                 <circle cx="50" cy="6" r="3" fill="#ef4444" class="animate-pulse" />
-                                
+
                                 <!-- 太空金色防护面罩 -->
-                                <ellipse id="astro-visor" cx="50" cy="46" rx="20" ry="15" fill="#facc15" stroke="#475569" stroke-width="2.5" style="transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);" />
+                                <ellipse id="astro-visor" cx="50" cy="46" rx="20" ry="15" fill="#facc15"
+                                    stroke="#475569" stroke-width="2.5"
+                                    style="transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);" />
                                 <!-- 宇航员大大的发光眼睛 -->
                                 <g id="astro-eyes" style="transition: opacity 0.3s ease;">
                                     <!-- 发光眼白底盘 -->
                                     <circle cx="43" cy="46" r="4.5" fill="#ffffff" stroke="#475569" stroke-width="1" />
                                     <circle cx="57" cy="46" r="4.5" fill="#ffffff" stroke="#475569" stroke-width="1" />
-                                    
+
                                     <!-- 可爱灵动瞳孔 (带有 transition 缓动，支持 JS 鼠标位置跟随) -->
-                                    <g id="astro-pupil-left" style="transition: transform 0.1s ease-out; transform-origin: 43px 46px;">
+                                    <g id="astro-pupil-left"
+                                        style="transition: transform 0.1s ease-out; transform-origin: 43px 46px;">
                                         <circle cx="43" cy="46" r="2.5" fill="#0f172a" />
                                         <circle cx="44.2" cy="44.8" r="0.8" fill="#ffffff" />
                                     </g>
-                                    <g id="astro-pupil-right" style="transition: transform 0.1s ease-out; transform-origin: 57px 46px;">
+                                    <g id="astro-pupil-right"
+                                        style="transition: transform 0.1s ease-out; transform-origin: 57px 46px;">
                                         <circle cx="57" cy="46" r="2.5" fill="#0f172a" />
                                         <circle cx="58.2" cy="44.8" r="0.8" fill="#ffffff" />
                                     </g>
-                                    
+
                                     <!-- 可爱的小腮红 -->
                                     <ellipse cx="38" cy="51" rx="2.5" ry="1.5" fill="rgba(244, 63, 94, 0.4)" />
                                     <ellipse cx="62" cy="51" rx="2.5" ry="1.5" fill="rgba(244, 63, 94, 0.4)" />
                                 </g>
-                                
+
                                 <!-- 宇航服左手臂 (微弯包围，保障绝对的物理严实遮挡) -->
-                                <path id="astro-arm-left" d="M22 68 C16 70, 18 84, 26 83" fill="none" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round" style="transform-origin: 22px 68px; transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);" />
+                                <path id="astro-arm-left" d="M22 68 C16 70, 18 84, 26 83" fill="none" stroke="#e2e8f0"
+                                    stroke-width="5" stroke-linecap="round"
+                                    style="transform-origin: 22px 68px; transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);" />
                                 <!-- 宇航服右手臂 (微弯包围，保障绝对的物理严实遮挡) -->
-                                <path id="astro-arm-right" d="M78 68 C84 70, 82 84, 74 83" fill="none" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round" style="transform-origin: 78px 68px; transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);" />
+                                <path id="astro-arm-right" d="M78 68 C84 70, 82 84, 74 83" fill="none" stroke="#e2e8f0"
+                                    stroke-width="5" stroke-linecap="round"
+                                    style="transform-origin: 78px 68px; transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);" />
                             </svg>
                         </div>
                     </div>
-                    
+
                     <div class="text-center mb-4">
-                        <h4 class="fw-bold text-white"><i class="fa-solid fa-user-astronaut me-2 text-info animate-pulse"></i>✨ 接入星穹影城 · 启航光影之旅</h4>
+                        <h4 class="fw-bold text-white"><i
+                                class="fa-solid fa-user-astronaut me-2 text-info animate-pulse"></i>✨ 接入星穹影城 · 启航光影之旅
+                        </h4>
                         <p class="text-secondary small">“光影在群星间漫延，静候您的降临。” 请输入您的星籍凭证与准入秘钥</p>
                     </div>
                     <form id="login-form" onsubmit="handleLogin(event)" autocomplete="off">
                         <div class="mb-3">
                             <label class="form-label text-secondary small">📧 接入星籍邮箱 (Email)</label>
-                            <input type="email" id="login-email" class="form-control bg-dark text-white border-secondary" placeholder="请输入您的星河认证邮箱" required autocomplete="off">
+                            <input type="email" id="login-email"
+                                class="form-control bg-dark text-white border-secondary" placeholder="请输入您的星河认证邮箱"
+                                required autocomplete="off">
                         </div>
                         <div class="mb-4">
                             <label class="form-label text-secondary small">🔑 准入秘钥 (Password)</label>
-                            <input type="text" id="login-password" class="form-control bg-dark text-white border-secondary hide-password" placeholder="请输入专属秘钥进行星轨校验" required autocomplete="off">
+                            <input type="text" id="login-password"
+                                class="form-control bg-dark text-white border-secondary hide-password"
+                                placeholder="请输入专属秘钥进行星轨校验" required autocomplete="off">
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold"><i class="fa-solid fa-rocket me-1 text-warning animate-pulse"></i>启动引擎 · 迈入星穹影城</button>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold"><i
+                                class="fa-solid fa-rocket me-1 text-warning animate-pulse"></i>启动引擎 · 迈入星穹影城</button>
                     </form>
-                    
+
                     <details class="mt-4 p-3 bg-secondary bg-opacity-10 border border-secondary rounded small">
-                        <summary class="fw-bold text-info" style="cursor: pointer;"><i class="fa-solid fa-circle-info me-1"></i>接入星系演示凭证 (可快速开启体验)</summary>
+                        <summary class="fw-bold text-info" style="cursor: pointer;"><i
+                                class="fa-solid fa-circle-info me-1"></i>接入星系演示凭证 (可快速开启体验)</summary>
                         <ul class="mb-0 mt-2 ps-3 text-secondary">
                             <li>🛸 特权值班经理 (营业额掌控)：<code>admin@cinema.com</code> / 秘钥：<code>admin12345</code></li>
-                            <li>👩‍🚀 星穹贵宾会员 (星格秒杀席位)：<code>user_1@test.com</code> (最大支持 <code>user_1000</code>) / 秘钥：<code>123456</code></li>
+                            <li>👩‍🚀 星穹贵宾会员 (星格秒杀席位)：<code>user_1@test.com</code> (最大支持 <code>user_1000</code>) /
+                                秘钥：<code>123456</code></li>
                         </ul>
                     </details>
                 </div>
@@ -338,19 +402,30 @@
             <!-- 1. 观众购票区域 (普通会员可见，值班经理完全隐藏) -->
             <div id="cinema-booking-section" class="col-12 mb-4 d-none">
                 <div class="card p-4">
-                    <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-info"><i class="fa-solid fa-rocket me-2 animate-pulse text-warning"></i>星宿轨道 · 光影选座舱</h5>
-                    
+                    <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-info"><i
+                            class="fa-solid fa-rocket me-2 animate-pulse text-warning"></i>星宿轨道 · 光影选座舱</h5>
+
                     <!-- 🌟 幸运选票：“星际奇点 · 幸运出票舱” 主视觉流光 Banner (Promo Card) -->
                     <div class="card p-3 mb-4 border-0 position-relative overflow-hidden lucky-promo-banner">
                         <!-- 星空装饰性微光渐变层 -->
-                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-info opacity-10" style="background: radial-gradient(circle at 80% 20%, #a855f7 0%, transparent 60%); pointer-events: none;"></div>
+                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-info opacity-10"
+                            style="background: radial-gradient(circle at 80% 20%, #a855f7 0%, transparent 60%); pointer-events: none;">
+                        </div>
                         <div class="row align-items-center g-3 position-relative" style="z-index: 1;">
                             <div class="col-md-8">
-                                <h6 class="fw-bold text-warning mb-1"><i class="fa-solid fa-wand-magic-sparkles me-2 text-warning animate-pulse"></i>星际奇点 · 幸运出票舱 (Cosmic Lucky Draw)</h6>
-                                <p class="small mb-0" style="font-size: 11.5px; line-height: 1.5; letter-spacing: 0.3px; color: #cbd5e1 !important;">“光影在群星间交织，未知是旅途最美的风景。” 正在纠结于浩瀚的影海？启动星图算法，为您的今夜在热映银河中随机引力锚定一场光影之约，并在空余星河中秒杀抢占一席心动之座，极速签发星光选票！</p>
+                                <h6 class="fw-bold text-warning mb-1"><i
+                                        class="fa-solid fa-wand-magic-sparkles me-2 text-warning animate-pulse"></i>星际奇点
+                                    · 幸运出票舱 (Cosmic Lucky Draw)</h6>
+                                <p class="small mb-0"
+                                    style="font-size: 11.5px; line-height: 1.5; letter-spacing: 0.3px; color: #cbd5e1 !important;">
+                                    “光影在群星间交织，未知是旅途最美的风景。”
+                                    正在纠结于浩瀚的影海？启动星图算法，为您的今夜在热映银河中随机引力锚定一场光影之约，并在空余星河中秒杀抢占一席心动之座，极速签发星光选票！</p>
                             </div>
                             <div class="col-md-4 text-md-end">
-                                <button id="lucky-book-btn" class="btn btn-warning py-2 px-4 fw-bold text-dark w-100 animate-pulse" onclick="handleLuckyDrawBookTicket()" style="font-size: 13px; border-radius: 8px; box-shadow: 0 0 12px rgba(234, 179, 8, 0.5); height: 40px;">
+                                <button id="lucky-book-btn"
+                                    class="btn btn-warning py-2 px-4 fw-bold text-dark w-100 animate-pulse"
+                                    onclick="handleLuckyDrawBookTicket()"
+                                    style="font-size: 13px; border-radius: 8px; box-shadow: 0 0 12px rgba(234, 179, 8, 0.5); height: 40px;">
                                     <i class="fa-solid fa-wand-magic-sparkles me-1 text-dark"></i>唤醒幸运 · 极速出票
                                 </button>
                             </div>
@@ -358,49 +433,72 @@
                     </div>
 
                     <!-- 多维度联动联合检索中心 (5 联排像素级等高等宽完美对称气泡) -->
-                    <div class="row g-2 mb-4 p-3 bg-secondary bg-opacity-10 border border-secondary border-opacity-50 rounded" style="min-height: 82px;">
+                    <div class="row g-2 mb-4 p-3 bg-secondary bg-opacity-10 border border-secondary border-opacity-50 rounded"
+                        style="min-height: 82px;">
                         <!-- 电影模糊搜索 -->
                         <div class="col-lg col-md-6 col-12">
-                            <label class="form-label small text-secondary mb-1"><i class="fa-solid fa-magnifying-glass me-1 text-info"></i>电影模糊搜索</label>
+                            <label class="form-label small text-secondary mb-1"><i
+                                    class="fa-solid fa-magnifying-glass me-1 text-info"></i>电影模糊搜索</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary" style="height: 38px; width: 42px; justify-content: center;"><i class="fa-solid fa-magnifying-glass text-info"></i></span>
-                                <input type="text" id="filter-search-name" class="form-control bg-dark text-white border-secondary" placeholder="输入关键字" style="height: 38px; font-size: 12.5px;">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"
+                                    style="height: 38px; width: 42px; justify-content: center;"><i
+                                        class="fa-solid fa-magnifying-glass text-info"></i></span>
+                                <input type="text" id="filter-search-name"
+                                    class="form-control bg-dark text-white border-secondary" placeholder="输入关键字"
+                                    style="height: 38px; font-size: 12.5px;">
                             </div>
                         </div>
                         <!-- 选择观影日期 -->
                         <div class="col-lg col-md-6 col-12">
-                            <label class="form-label small text-secondary mb-1"><i class="fa-solid fa-calendar me-1 text-primary"></i>观影日期</label>
+                            <label class="form-label small text-secondary mb-1"><i
+                                    class="fa-solid fa-calendar me-1 text-primary"></i>观影日期</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary" style="height: 38px; width: 42px; justify-content: center;"><i class="fa-solid fa-calendar text-primary"></i></span>
-                                <input type="date" id="filter-date" class="form-control bg-dark text-white border-secondary" style="height: 38px; font-size: 12.5px; padding-top: 5px;">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"
+                                    style="height: 38px; width: 42px; justify-content: center;"><i
+                                        class="fa-solid fa-calendar text-primary"></i></span>
+                                <input type="date" id="filter-date"
+                                    class="form-control bg-dark text-white border-secondary"
+                                    style="height: 38px; font-size: 12.5px; padding-top: 5px;">
                             </div>
                         </div>
                         <!-- 选择上映电影 -->
                         <div class="col-lg col-md-6 col-12">
-                            <label class="form-label small text-secondary mb-1"><i class="fa-solid fa-film me-1 text-warning"></i>寻觅热映星云</label>
+                            <label class="form-label small text-secondary mb-1"><i
+                                    class="fa-solid fa-film me-1 text-warning"></i>寻觅热映星云</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary" style="height: 38px; width: 42px; justify-content: center;"><i class="fa-solid fa-video text-warning"></i></span>
-                                <select id="filter-movie" class="form-select bg-dark text-white border-secondary" style="height: 38px; font-size: 12.5px;">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"
+                                    style="height: 38px; width: 42px; justify-content: center;"><i
+                                        class="fa-solid fa-video text-warning"></i></span>
+                                <select id="filter-movie" class="form-select bg-dark text-white border-secondary"
+                                    style="height: 38px; font-size: 12.5px;">
                                     <option value="all">🍿 全部上映电影</option>
                                 </select>
                             </div>
                         </div>
                         <!-- 选择放映影厅 -->
                         <div class="col-lg col-md-6 col-12">
-                            <label class="form-label small text-secondary mb-1"><i class="fa-solid fa-door-open me-1 text-success"></i>涉足上映星宇</label>
+                            <label class="form-label small text-secondary mb-1"><i
+                                    class="fa-solid fa-door-open me-1 text-success"></i>涉足上映星宇</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary" style="height: 38px; width: 42px; justify-content: center;"><i class="fa-solid fa-door-open text-success"></i></span>
-                                <select id="filter-room" class="form-select bg-dark text-white border-secondary" style="height: 38px; font-size: 12.5px;">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"
+                                    style="height: 38px; width: 42px; justify-content: center;"><i
+                                        class="fa-solid fa-door-open text-success"></i></span>
+                                <select id="filter-room" class="form-select bg-dark text-white border-secondary"
+                                    style="height: 38px; font-size: 12.5px;">
                                     <option value="all">🏢 全部上映影厅</option>
                                 </select>
                             </div>
                         </div>
                         <!-- 放映时间段 -->
                         <div class="col-lg col-md-6 col-12">
-                            <label class="form-label small text-secondary mb-1"><i class="fa-solid fa-clock me-1 text-danger"></i>放映时段</label>
+                            <label class="form-label small text-secondary mb-1"><i
+                                    class="fa-solid fa-clock me-1 text-danger"></i>放映时段</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-secondary" style="height: 38px; width: 42px; justify-content: center;"><i class="fa-solid fa-clock text-danger"></i></span>
-                                <select id="filter-time-range" class="form-select bg-dark text-white border-secondary" style="height: 38px; font-size: 12.5px;">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"
+                                    style="height: 38px; width: 42px; justify-content: center;"><i
+                                        class="fa-solid fa-clock text-danger"></i></span>
+                                <select id="filter-time-range" class="form-select bg-dark text-white border-secondary"
+                                    style="height: 38px; font-size: 12.5px;">
                                     <option value="all">⏰ 全部时间段</option>
                                     <option value="morning">🌅 上午场 (08:00 - 12:00)</option>
                                     <option value="afternoon">☀️ 下午场 (12:00 - 18:00)</option>
@@ -416,10 +514,13 @@
                     </div>
 
                     <!-- 分页导航栏 (去痕迹化高雅订票分页) -->
-                    <div id="pagination-container" class="d-flex justify-content-between align-items-center mt-4 d-none">
-                        <button id="prev-page-btn" class="btn btn-outline-secondary btn-sm fw-bold px-3" onclick="changePage(-1)"><i class="fa-solid fa-chevron-left me-1"></i>上一页</button>
+                    <div id="pagination-container"
+                        class="d-flex justify-content-between align-items-center mt-4 d-none">
+                        <button id="prev-page-btn" class="btn btn-outline-secondary btn-sm fw-bold px-3"
+                            onclick="changePage(-1)"><i class="fa-solid fa-chevron-left me-1"></i>上一页</button>
                         <span id="page-info-text" class="small text-secondary fw-bold">第 1 页 / 共 1 页 (共 0 场)</span>
-                        <button id="next-page-btn" class="btn btn-outline-secondary btn-sm fw-bold px-3" onclick="changePage(1)">下一页<i class="fa-solid fa-chevron-right ms-1"></i></button>
+                        <button id="next-page-btn" class="btn btn-outline-secondary btn-sm fw-bold px-3"
+                            onclick="changePage(1)">下一页<i class="fa-solid fa-chevron-right ms-1"></i></button>
                     </div>
 
                     <!-- 座位选择区 (默认隐藏，选择场次后显示) -->
@@ -427,7 +528,8 @@
                         <hr class="border-secondary my-4">
                         <div class="text-center position-relative mb-2">
                             <h6 class="fw-bold text-warning mb-1" id="seating-title">🪐 星格席位图例</h6>
-                            <button class="btn btn-link btn-sm text-secondary p-0 border-0" onclick="refreshCurrentSeats()" title="实时重绘星格">
+                            <button class="btn btn-link btn-sm text-secondary p-0 border-0"
+                                onclick="refreshCurrentSeats()" title="实时重绘星格">
                                 <i class="fa-solid fa-arrows-rotate me-1" id="refresh-seats-icon"></i>实时重绘星格席位
                             </button>
                         </div>
@@ -443,16 +545,24 @@
 
                         <!-- 图例 -->
                         <div class="d-flex justify-content-center gap-4 mt-4 small text-secondary">
-                            <div><span class="seat-item seat-available d-inline-block align-middle me-2" style="width: 16px; height: 16px; min-width: 16px; min-height: 16px; display: inline-block;"></span> 可选席位</div>
-                            <div><span class="seat-item seat-selected d-inline-block align-middle me-2" style="width: 16px; height: 16px; min-width: 16px; min-height: 16px; display: inline-block;"></span> 已选席位</div>
-                            <div><span class="seat-item seat-sold d-inline-block align-middle me-2" style="width: 16px; height: 16px; min-width: 16px; min-height: 16px; display: inline-block;"></span> 锁定售出</div>
+                            <div><span class="seat-item seat-available d-inline-block align-middle me-2"
+                                    style="width: 16px; height: 16px; min-width: 16px; min-height: 16px; display: inline-block;"></span>
+                                可选席位</div>
+                            <div><span class="seat-item seat-selected d-inline-block align-middle me-2"
+                                    style="width: 16px; height: 16px; min-width: 16px; min-height: 16px; display: inline-block;"></span>
+                                已选席位</div>
+                            <div><span class="seat-item seat-sold d-inline-block align-middle me-2"
+                                    style="width: 16px; height: 16px; min-width: 16px; min-height: 16px; display: inline-block;"></span>
+                                锁定售出</div>
                         </div>
 
                         <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-column flex-md-row">
-                            <button id="random-book-btn" class="btn btn-outline-info px-4 py-2 fw-bold" onclick="handleRandomBookTicket()" style="min-width: 210px;" disabled>
+                            <button id="random-book-btn" class="btn btn-outline-info px-4 py-2 fw-bold"
+                                onclick="handleRandomBookTicket()" style="min-width: 210px;" disabled>
                                 <i class="fa-solid fa-bolt me-1"></i>闪电星轨秒杀 (随机座席)
                             </button>
-                            <button id="book-ticket-btn" class="btn btn-success px-5 py-2 fw-bold" onclick="handleBookTicket()" style="min-width: 290px;" disabled>
+                            <button id="book-ticket-btn" class="btn btn-success px-5 py-2 fw-bold"
+                                onclick="handleBookTicket()" style="min-width: 290px;" disabled>
                                 <i class="fa-solid fa-ticket me-1"></i>立即锁定星格 (一键出票)
                             </button>
                         </div>
@@ -464,16 +574,21 @@
             <!-- 3. 个人中心区域 (普通会员可见，可以与选票购票区域切换) -->
             <div id="profile-section" class="col-12 mb-4 d-none">
                 <div class="card p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+                    <div
+                        class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
                         <h5 class="fw-bold mb-0 text-info"><i class="fa-solid fa-user-astronaut me-2"></i>探寻我的星海足迹</h5>
-                        <button class="btn btn-outline-secondary btn-sm" onclick="toggleProfile()"><i class="fa-solid fa-chevron-left me-1"></i>返回星宿轨道</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="toggleProfile()"><i
+                                class="fa-solid fa-chevron-left me-1"></i>返回星宿轨道</button>
                     </div>
-                    
+
                     <!-- 用户 Profile 详细卡片 -->
                     <div class="row g-4 mb-4">
                         <div class="col-md-4 text-center border-end border-secondary">
                             <div class="position-relative d-inline-block">
-                                <img id="profile-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23334155'/><path d='M25 80c0-15 10-20 25-20s25 5 25 20' fill='%2364748b'/><circle cx='50' cy='35' r='15' fill='%2364748b'/></svg>" class="rounded-circle border border-info p-1" style="width: 120px; height: 120px; object-fit: cover;">
+                                <img id="profile-avatar"
+                                    src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23334155'/><path d='M25 80c0-15 10-20 25-20s25 5 25 20' fill='%2364748b'/><circle cx='50' cy='35' r='15' fill='%2364748b'/></svg>"
+                                    class="rounded-circle border border-info p-1"
+                                    style="width: 120px; height: 120px; object-fit: cover;">
                             </div>
                             <h5 id="profile-fullname" class="mt-3 fw-bold text-white">-</h5>
                             <span id="profile-role" class="badge bg-primary">星穹贵宾会员</span>
@@ -508,29 +623,36 @@
                             <h6 class="fw-bold text-info mb-0"><i class="fa-solid fa-receipt me-2"></i>签发星轨选票足迹</h6>
                             <span class="badge bg-secondary" id="ticket-count-badge">0 张</span>
                         </div>
-                        
+
                         <!-- A. 有效行程卡片流 -->
                         <div id="active-tickets-container" class="d-flex flex-column gap-3 mb-4">
                             <div class="col-12 text-center text-secondary py-3 small">🪐 您的星空足迹尚未起航，快去挑选一场心动影片吧</div>
                         </div>
-                        
+
                         <!-- B. 已退选票折叠湮灭区 -->
                         <div id="refunded-tickets-section" class="d-none">
                             <div class="d-grid gap-2 mb-3">
-                                <button class="btn btn-outline-secondary btn-sm text-start py-2 px-3 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#refunded-collapse" aria-expanded="false" style="font-size: 11.5px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.15);">
+                                <button
+                                    class="btn btn-outline-secondary btn-sm text-start py-2 px-3 d-flex justify-content-between align-items-center"
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#refunded-collapse"
+                                    aria-expanded="false"
+                                    style="font-size: 11.5px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.15);">
                                     <span><i class="fa-solid fa-clock-rotate-left me-1"></i>物理湮灭历史 (已退订退款记录)</span>
-                                    <i class="fa-solid fa-chevron-down" id="refund-collapse-icon" style="font-size: 10px;"></i>
+                                    <i class="fa-solid fa-chevron-down" id="refund-collapse-icon"
+                                        style="font-size: 10px;"></i>
                                 </button>
                             </div>
                             <div class="collapse" id="refunded-collapse">
-                                <div id="refunded-tickets-container" class="d-flex flex-column gap-3 p-3 bg-dark bg-opacity-20 rounded border border-secondary border-opacity-25 mb-4">
+                                <div id="refunded-tickets-container"
+                                    class="d-flex flex-column gap-3 p-3 bg-dark bg-opacity-20 rounded border border-secondary border-opacity-25 mb-4">
                                     <!-- 已退订订单在此追加 -->
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- C. 隐形/显示滚动分页加载触发元素 (IntersectionObserver 触发锚点) -->
-                        <div id="tickets-loading-trigger" class="text-center py-3 text-secondary small d-none" style="font-size: 11.5px; letter-spacing: 0.5px;">
+                        <div id="tickets-loading-trigger" class="text-center py-3 text-secondary small d-none"
+                            style="font-size: 11.5px; letter-spacing: 0.5px;">
                             <i class="fa-solid fa-spinner fa-spin me-1 text-info"></i>正在搜寻更多星轨余光...
                         </div>
                     </div>
@@ -541,15 +663,18 @@
             <div id="admin-control-section" class="col-lg-8 mx-auto mb-4 d-none">
                 <!-- 维护控制面板 -->
                 <div class="card p-4 mb-4">
-                    <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-warning"><i class="fa-solid fa-sliders me-2"></i>星空影城排片与系统维护终端</h5>
+                    <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-warning"><i
+                            class="fa-solid fa-sliders me-2"></i>星空影城排片与系统维护终端</h5>
                     <form id="config-form" onsubmit="handleSaveConfig(event)">
                         <!-- 数据库连接池开关 -->
                         <div class="mb-4">
                             <label class="form-label d-flex justify-content-between">
-                                <span>影城并发售票通道模式<span class="tooltip-box"><i class="fa-solid fa-circle-question text-secondary ms-1"></i><span class="tooltip-text">【数据库连接池模式】
-原理：切换是使用常驻高并发长连接池(QueuePool)，还是每次请求都建立并销毁新连接。
-意义：在压测下直观对比连接池重用与重复创建销毁的CPU及网卡开销。
-预期影响：启用连接池后高并发下可秒级响应；禁用后高并发下数据库极易抛出拒绝连接，并伴随巨大的响应时延与卡死。</span></span></span>
+                                <span>影城并发售票通道模式<span class="tooltip-box"><i
+                                            class="fa-solid fa-circle-question text-secondary ms-1"></i><span
+                                            class="tooltip-text">【数据库连接池模式】
+                                            原理：切换是使用常驻高并发长连接池(QueuePool)，还是每次请求都建立并销毁新连接。
+                                            意义：在压测下直观对比连接池重用与重复创建销毁的CPU及网卡开销。
+                                            预期影响：启用连接池后高并发下可秒级响应；禁用后高并发下数据库极易抛出拒绝连接，并伴随巨大的响应时延与卡死。</span></span></span>
                                 <span id="pool-badge" class="badge rounded-pill badge-active">已启用</span>
                             </label>
                             <select id="config-pool" class="form-select bg-dark text-white border-secondary">
@@ -560,25 +685,33 @@
 
                         <!-- 并发锁模式 -->
                         <div class="mb-4">
-                            <label class="form-label">影城订单事务级别<span class="tooltip-box"><i class="fa-solid fa-circle-question text-secondary ms-1"></i><span class="tooltip-text">【并发锁控制机制】
-原理：下单时在数据库事务级采取的控制策略。
-- 基础无锁：没有任何事务排他控制。
-- 高一致性串行锁：利用 select ... for update 强行将同一场次的售票过程串行行锁化。
-- 乐观并发锁：通过 Showtime 实体中的 version 版本字段进行 CAS 并发原子自旋校验。
-意义：对比不同并发锁在高强度高并发下单时的抢座安全度与吞吐性能。
-预期影响：无锁模式并发必发生严重的同一座位超卖重合；悲观行锁100%安全但高负载易产生锁等待甚至行锁死锁；乐观锁100%安全且具有极大吞吐性能表现。</span></span></label>
+                            <label class="form-label">影城订单事务级别<span class="tooltip-box"><i
+                                        class="fa-solid fa-circle-question text-secondary ms-1"></i><span
+                                        class="tooltip-text">【并发锁控制机制】
+                                        原理：下单时在数据库事务级采取的控制策略。
+                                        - 基础无锁：没有任何事务排他控制。
+                                        - 高一致性串行锁：利用 select ... for update 强行将同一场次的售票过程串行行锁化。
+                                        - 乐观并发锁：通过 Showtime 实体中的 version 版本字段进行 CAS 并发原子自旋校验。
+                                        意义：对比不同并发锁在高强度高并发下单时的抢座安全度与吞吐性能。
+                                        预期影响：无锁模式并发必发生严重的同一座位超卖重合；悲观行锁100%安全但高负载易产生锁等待甚至行锁死锁；乐观锁100%安全且具有极大吞吐性能表现。</span></span></label>
                             <div class="bg-dark p-3 rounded border border-secondary">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="radio" name="lockMode" id="lock-none" value="none">
-                                    <label class="form-check-label text-danger" for="lock-none">基础无锁级 (高并发但易导致多人同座冲突)</label>
+                                    <input class="form-check-input" type="radio" name="lockMode" id="lock-none"
+                                        value="none">
+                                    <label class="form-check-label text-danger" for="lock-none">基础无锁级
+                                        (高并发但易导致多人同座冲突)</label>
                                 </div>
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="radio" name="lockMode" id="lock-pessimistic" value="pessimistic" checked>
-                                    <label class="form-check-label text-warning" for="lock-pessimistic">高一致性串行锁 (强数据一致，高峰期排队)</label>
+                                    <input class="form-check-input" type="radio" name="lockMode" id="lock-pessimistic"
+                                        value="pessimistic" checked>
+                                    <label class="form-check-label text-warning" for="lock-pessimistic">高一致性串行锁
+                                        (强数据一致，高峰期排队)</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="lockMode" id="lock-optimistic" value="optimistic">
-                                    <label class="form-check-label text-success" for="lock-optimistic">乐观选座并发锁 (无锁原子校验，并发自旋选座冲突)</label>
+                                    <input class="form-check-input" type="radio" name="lockMode" id="lock-optimistic"
+                                        value="optimistic">
+                                    <label class="form-check-label text-success" for="lock-optimistic">乐观选座并发锁
+                                        (无锁原子校验，并发自旋选座冲突)</label>
                                 </div>
                             </div>
                         </div>
@@ -586,48 +719,69 @@
                         <!-- 慢查询注入开关 -->
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="config-slow-query">
-                            <label class="form-check-label fw-bold text-danger" for="config-slow-query"><i class="fa-solid fa-triangle-exclamation me-1"></i>模拟系统硬件降级 (磁盘 I/O 高负载响应挂起)<span class="tooltip-box"><i class="fa-solid fa-circle-question text-secondary ms-1"></i><span class="tooltip-text">【慢查询模拟注入】
-原理：每次数据库查询前，强行使线程 sleep 挂起 2 秒。
-意义：模拟后端数据库服务器在高并发下发生磁盘I/O饱负荷、CPU爆表或者慢查询发生时的阻塞表现，用以测试系统的降级与防卡死自愈能力。
-预期影响：开启后所有前端查询接口响应均会被强行拉长至 2 秒以上，可配合并发购买测试以观察连接池是否瞬间耗尽及购票按钮是否正常置灰。</span></span></label>
+                            <label class="form-check-label fw-bold text-danger" for="config-slow-query"><i
+                                    class="fa-solid fa-triangle-exclamation me-1"></i>模拟系统硬件降级 (磁盘 I/O 高负载响应挂起)<span
+                                    class="tooltip-box"><i
+                                        class="fa-solid fa-circle-question text-secondary ms-1"></i><span
+                                        class="tooltip-text">【慢查询模拟注入】
+                                        原理：每次数据库查询前，强行使线程 sleep 挂起 2 秒。
+                                        意义：模拟后端数据库服务器在高并发下发生磁盘I/O饱负荷、CPU爆表或者慢查询发生时的阻塞表现，用以测试系统的降级与防卡死自愈能力。
+                                        预期影响：开启后所有前端查询接口响应均会被强行拉长至 2
+                                        秒以上，可配合并发购买测试以观察连接池是否瞬间耗尽及购票按钮是否正常置灰。</span></span></label>
                         </div>
 
                         <!-- 接口签名校验开关 -->
                         <div class="form-check form-switch mb-4">
                             <input class="form-check-input" type="checkbox" id="config-signature">
-                            <label class="form-check-label fw-bold text-info" for="config-signature"><i class="fa-solid fa-signature me-1"></i>开启客户端防篡改安全验证 (signature)<span class="tooltip-box"><i class="fa-solid fa-circle-question text-secondary ms-1"></i><span class="tooltip-text">【防重放数字签名】
-原理：强制要求前端在发起购票时，在 Request Body 中携带通过 SHA-256 算法生成的 signature 数字签名参数。
-意义：从密码学角度防御恶意爬虫脚本绕过前端批量刷票、防御大并发下的订单重放攻击。
-预期影响：开启后，任何尝试绕过前端安全签名校验、伪造参数或在 5 分钟内发起二次重放的恶意脚本都会被接口瞬间 401 坚决拒绝。</span></span></label>
+                            <label class="form-check-label fw-bold text-info" for="config-signature"><i
+                                    class="fa-solid fa-signature me-1"></i>开启客户端防篡改安全验证 (signature)<span
+                                    class="tooltip-box"><i
+                                        class="fa-solid fa-circle-question text-secondary ms-1"></i><span
+                                        class="tooltip-text">【防重放数字签名】
+                                        原理：强制要求前端在发起购票时，在 Request Body 中携带通过 SHA-256 算法生成的 signature 数字签名参数。
+                                        意义：从密码学角度防御恶意爬虫脚本绕过前端批量刷票、防御大并发下的订单重放攻击。
+                                        预期影响：开启后，任何尝试绕过前端安全签名校验、伪造参数或在 5 分钟内发起二次重放的恶意脚本都会被接口瞬间 401
+                                        坚决拒绝。</span></span></label>
                         </div>
 
                         <!-- 国密 SM3 签名校验开关 -->
                         <div class="form-check form-switch mb-4">
                             <input class="form-check-input" type="checkbox" id="config-signature-sm3">
-                            <label class="form-check-label fw-bold text-success" for="config-signature-sm3"><i class="fa-solid fa-shield-halved me-1"></i>开启国密 SM3 签名安全校验 (X-Signature)<span class="tooltip-box"><i class="fa-solid fa-circle-question text-secondary ms-1"></i><span class="tooltip-text">【国密 SM3 数字签名】
-原理：当本项开启时，购票接口将强制要求在 Header X-Signature 中携带基于国密 SM3 算法生成的数字签名。
-意义：满足信创合规性要求，防参数篡改与并发重放。
-预期影响：开启后，签名计算将基于 SM3 算法，后端将进行国密校验，常规或非法签名将被接口拦截。</span></span></label>
+                            <label class="form-check-label fw-bold text-success" for="config-signature-sm3"><i
+                                    class="fa-solid fa-shield-halved me-1"></i>开启国密 SM3 签名安全校验 (X-Signature)<span
+                                    class="tooltip-box"><i
+                                        class="fa-solid fa-circle-question text-secondary ms-1"></i><span
+                                        class="tooltip-text">【国密 SM3 数字签名】
+                                        原理：当本项开启时，购票接口将强制要求在 Header X-Signature 中携带基于国密 SM3 算法生成的数字签名。
+                                        意义：满足信创合规性要求，防参数篡改与并发重放。
+                                        预期影响：开启后，签名计算将基于 SM3 算法，后端将进行国密校验，常规或非法签名将被接口拦截。</span></span></label>
                         </div>
 
                         <!-- 国密 SM4 密码传输加密开关 -->
                         <div class="form-check form-switch mb-4">
                             <input class="form-check-input" type="checkbox" id="config-sm4-password">
-                            <label class="form-check-label fw-bold text-warning" for="config-sm4-password"><i class="fa-solid fa-key me-1"></i>开启登录密码国密 SM4 传输加密<span class="tooltip-box"><i class="fa-solid fa-circle-question text-secondary ms-1"></i><span class="tooltip-text">【国密 SM4 传输加密】
-原理：当本项开启时，前端登录发送密码时将使用国密 SM4 对称加密算法加密后再传输，后端在接收到密文后使用相同秘钥解密。
-意义：防网络抓包防爆破明文密码，满足国密传输合规性改造。
-预期影响：开启后，前端提交的密码将不再以明文在网络中传输，极大提升账号安全性。</span></span></label>
+                            <label class="form-check-label fw-bold text-warning" for="config-sm4-password"><i
+                                    class="fa-solid fa-key me-1"></i>开启登录密码国密 SM4 传输加密<span class="tooltip-box"><i
+                                        class="fa-solid fa-circle-question text-secondary ms-1"></i><span
+                                        class="tooltip-text">【国密 SM4 传输加密】
+                                        原理：当本项开启时，前端登录发送密码时将使用国密 SM4 对称加密算法加密后再传输，后端在接收到密文后使用相同秘钥解密。
+                                        意义：防网络抓包防爆破明文密码，满足国密传输合规性改造。
+                                        预期影响：开启后，前端提交的密码将不再以明文在网络中传输，极大提升账号安全性。</span></span></label>
                         </div>
 
-                        <button type="submit" class="btn btn-warning w-100 fw-bold py-2 text-dark"><i class="fa-solid fa-floppy-disk me-1"></i>应用并热保存配置终端 (覆写持久化)</button>
+                        <button type="submit" class="btn btn-warning w-100 fw-bold py-2 text-dark"><i
+                                class="fa-solid fa-floppy-disk me-1"></i>应用并热保存配置终端 (覆写持久化)</button>
                     </form>
                 </div>
 
                 <!-- 数据一键重置面板 -->
                 <div class="card p-4 border-danger">
-                    <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-danger"><i class="fa-solid fa-rotate-left me-2"></i>影城营业数据中心</h5>
-                    <p class="small text-secondary mb-4">进行全系统营业数据清盘重置。点击下方按钮可在瞬间清空当前所有临时出票订单，重建并初始化干净的 30 天初始排片与座位状态。</p>
-                    <button class="btn btn-outline-danger w-100 py-3 fw-bold" onclick="handleResetDatabase()"><i class="fa-solid fa-arrows-rotate me-1"></i>系统日结归档与排片初始化</button>
+                    <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-danger"><i
+                            class="fa-solid fa-rotate-left me-2"></i>影城营业数据中心</h5>
+                    <p class="small text-secondary mb-4">进行全系统营业数据清盘重置。点击下方按钮可在瞬间清空当前所有临时出票订单，重建并初始化干净的 30 天初始排片与座位状态。
+                    </p>
+                    <button class="btn btn-outline-danger w-100 py-3 fw-bold" onclick="handleResetDatabase()"><i
+                            class="fa-solid fa-arrows-rotate me-1"></i>系统日结归档与排片初始化</button>
                 </div>
             </div>
         </div>
@@ -638,8 +792,10 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark border border-secondary text-white">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>日结归档安全警告</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>日结归档安全警告
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     您确定要执行系统日结归档操作吗？这将会清零当前所有售出订单票单，并秒级重建干净的电影排片环境！
@@ -651,14 +807,16 @@
             </div>
         </div>
     </div>
-    
+
     <!-- 退票二次确认优雅弹窗 (Modal) -->
     <div class="modal fade" id="refundConfirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark border border-secondary text-white">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-warning"><i class="fa-solid fa-triangle-exclamation me-2"></i>物理撤销 · 票务退回</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title text-warning"><i class="fa-solid fa-triangle-exclamation me-2"></i>物理撤销 ·
+                        票务退回</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-secondary small">
                     您确定要申请退票吗？订单退款将按原路秒级自动退回到您的账户，退票后该场次座位将被重新释放。
@@ -673,13 +831,17 @@
 
     <!-- 优雅非阻塞 Toast 提示容器 (响应式视口比例自适应毛玻璃气泡) -->
     <div class="toast-container position-fixed responsive-toast-container p-3" style="z-index: 2000;">
-        <div id="status-toast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" style="background-color: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(16px) saturate(180%); border: 1px solid rgba(255,255,255,0.08) !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4); border-radius: 20px;">
+        <div id="status-toast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive"
+            aria-atomic="true"
+            style="background-color: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(16px) saturate(180%); border: 1px solid rgba(255,255,255,0.08) !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4); border-radius: 20px;">
             <div class="d-flex align-items-center py-2 px-3 justify-content-center">
                 <div id="toast-icon-container" class="d-flex align-items-center me-2"></div>
-                <div class="toast-body fw-bold text-center" id="toast-message-body" style="font-size: 13px; letter-spacing: 0.5px; padding: 0;">
+                <div class="toast-body fw-bold text-center" id="toast-message-body"
+                    style="font-size: 13px; letter-spacing: 0.5px; padding: 0;">
                     提示内容
                 </div>
-                <button type="button" class="btn-close btn-close-white ms-3" data-bs-dismiss="toast" aria-label="Close" style="font-size: 10px; flex-shrink: 0;"></button>
+                <button type="button" class="btn-close btn-close-white ms-3" data-bs-dismiss="toast" aria-label="Close"
+                    style="font-size: 10px; flex-shrink: 0;"></button>
             </div>
         </div>
     </div>
@@ -688,4 +850,5 @@
     <script src="https://registry.npmmirror.com/bootstrap/5.3.0/files/dist/js/bootstrap.bundle.min.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

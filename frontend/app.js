@@ -16,7 +16,7 @@ let currentRole = sessionStorage.getItem("role") || "user";
 
 // 全局 Fetch 拦截器：统一处理 401 越权与单点登录被踢下线逻辑，阻断无限自愈重试
 const originalFetch = window.fetch;
-window.fetch = async function(...args) {
+window.fetch = async function (...args) {
     const response = await originalFetch(...args);
     if (response.status === 401 && currentToken) {
         let errMsg = "⚠️ 您的登录会话已失效，请重新登录！";
@@ -27,8 +27,8 @@ window.fetch = async function(...args) {
             if (detail.includes("elsewhere")) {
                 errMsg = "⚠️ 您的账号已在其他终端登录，当前会话已失效，请重新登录！";
             }
-        } catch (e) {}
-        
+        } catch (e) { }
+
         handleLogout();
         showToast(errMsg, "danger");
         throw new Error("Session expired or logged in elsewhere");
@@ -71,14 +71,14 @@ function showToast(message, type = "info") {
     const toastEl = document.getElementById("status-toast");
     const bodyEl = document.getElementById("toast-message-body");
     const iconContainer = document.getElementById("toast-icon-container");
-    
+
     // 清理既往背景样式，采用高品质毛玻璃黑灰底色，仅以发光图标和微弱阴影区分配色
     toastEl.classList.remove("border-success", "border-danger", "border-warning", "border-info");
-    
+
     // 动态绑定精致微光图标与边框微弱辉光
     let iconHtml = "";
     let borderClass = "border-info";
-    
+
     if (type === "success") {
         iconHtml = `<i class="fa-solid fa-circle-check text-success fs-5 animate-pulse" style="text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);"></i>`;
         borderClass = "border-success";
@@ -92,12 +92,12 @@ function showToast(message, type = "info") {
         iconHtml = `<i class="fa-solid fa-meteor text-info fs-5 animate-pulse" style="text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);"></i>`;
         borderClass = "border-info";
     }
-    
+
     toastEl.classList.add(borderClass);
     toastEl.style.borderWidth = "1.5px";
     iconContainer.innerHTML = iconHtml;
     bodyEl.textContent = message;
-    
+
     const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
     toast.show();
 }
@@ -105,17 +105,12 @@ function showToast(message, type = "info") {
 // ==================== 1. 原生安全签名与UUID正则防御 ====================
 
 /**
- * 客户端 SHA-256 签名计算引擎 (利用浏览器 subtle.digest 密码学原生安全沙盒)
+ * 客户端 SHA-256 签名计算引擎
  */
 async function computeSignature(showtimeId, seatId, timestamp, nonce) {
     const payload = `${showtimeId}${seatId}${timestamp}${nonce}${signatureSecret}`;
-    
-    const encoder = new TextEncoder();
-    const data = encoder.encode(payload);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-    return hashHex;
+
+    return CryptoJS.SHA256(payload).toString(CryptoJS.enc.Hex);
 }
 
 
@@ -186,7 +181,7 @@ function resetPageAndFilter() {
 function initFilterDateBounds() {
     const dateInput = document.getElementById("filter-date");
     const today = new Date();
-    
+
     // 转化为 YYYY-MM-DD
     const formatDate = (d) => {
         const year = d.getFullYear();
@@ -194,13 +189,13 @@ function initFilterDateBounds() {
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     };
-    
+
     const minDateStr = formatDate(today);
-    
+
     const maxDate = new Date();
     maxDate.setDate(today.getDate() + 30);
     const maxDateStr = formatDate(maxDate);
-    
+
     dateInput.min = minDateStr;
     dateInput.max = maxDateStr;
     dateInput.value = minDateStr; // 默认选中今天以呈现今日排片
@@ -223,17 +218,17 @@ async function handleLogin(event) {
                 for (let i = 0; i < keyStr.length; i++) {
                     hexKey += keyStr.charCodeAt(i).toString(16).padStart(2, "0");
                 }
-                
+
                 // 1. 生成 16 字节高随机 IV
                 let ivHex = "";
                 for (let i = 0; i < 16; i++) {
                     ivHex += Math.floor(Math.random() * 256).toString(16).padStart(2, "0");
                 }
-                
+
                 // 2. 组装内嵌 13 位高精度时间戳的明文负载
                 const timestamp = Date.now().toString();
                 const plainPayload = `${timestamp}:${password}`;
-                
+
                 // 3. SM4 CBC 加密，并头部附带 IV 进行融合拼接
                 const cipherTextHex = sm4.encrypt(plainPayload, hexKey, {
                     mode: "cbc",
@@ -282,7 +277,7 @@ async function fetchUserProfile(isLoginTrigger = false) {
                 "Authorization": `Bearer ${currentToken}`
             }
         });
-        
+
         if (!response.ok) throw new Error("获取用户信息失败");
         const res = await response.json();
         const user = res.data;
@@ -328,13 +323,13 @@ function handleLogout() {
     currentUserProfile = null;
     sessionStorage.clear();
     updateUIState(false);
-    
+
     // 清理已购选票缓存显示
     const countBadge = document.getElementById("ticket-count-badge");
     const container = document.getElementById("tickets-list-container");
     if (countBadge) countBadge.textContent = "0 张";
     if (container) container.innerHTML = `<div class="col-12 text-center text-secondary py-3 small">暂无已购选票记录</div>`;
-    
+
     // 重置个人中心按钮文字和样式
     const profileBtn = document.getElementById("profile-btn");
     if (profileBtn) {
@@ -360,7 +355,7 @@ function updateUIState(isLoggedIn) {
         loginContainer.classList.add("d-none");
         mainPanel.classList.remove("d-none");
         logoutBtn.classList.remove("d-none");
-        
+
         if (currentRole === "admin") {
             const adminName = currentUserProfile ? ` (${currentUserProfile.full_name || '管理员'})` : "";
             userInfoText.textContent = `当前身份: 影城值班经理${adminName}`;
@@ -404,7 +399,7 @@ async function loadShowtimes() {
         ]);
 
         if (!moviesResp.ok || !roomsResp.ok) throw new Error("初始化上映信息字典失败");
-        
+
         const [moviesRes, roomsRes] = await Promise.all([moviesResp.json(), roomsResp.json()]);
 
         // 直接动态渲染电影与影厅的检索下拉框
@@ -491,13 +486,13 @@ async function filterShowtimes() {
         const response = await fetch(`${API_BASE_URL}/cinema/showtimes?${params.toString()}`, {
             headers: { "Authorization": `Bearer ${currentToken}` }
         });
-        
+
         if (!response.ok) throw new Error("联合检索失败，请确认系统状态");
         const res = await response.json();
-        
+
         // 存储总数
         totalCount = res.data.total;
-        
+
         // 直接交给物理渲染器渲染后端返回的过滤列表
         renderShowtimes(res.data.showtimes);
 
@@ -653,7 +648,7 @@ async function selectShowtime(showtimeId, roomName, movieTitle) {
     seatingSec.classList.remove("d-none");
     seatingSec.classList.add("fade-in-up");
     document.getElementById("seating-title").textContent = `《${movieTitle}》 - ${roomName} 在线座位选择`;
-    
+
     // 视觉归位并获取最新座位
     document.getElementById("book-ticket-btn").disabled = true;
     document.getElementById("random-book-btn").disabled = true;
@@ -672,14 +667,14 @@ async function loadSeats(showtimeId) {
         });
         if (!response.ok) throw new Error("获取座位占用图失败");
         const res = await response.json();
-        
+
         // 全局缓存
         currentSeats = res.data;
 
         // 弹性自适应列数：提取所有座位的最大列号，若数据为空则默认为8 (5x8小厅)
         const colsCount = currentSeats.length > 0 ? Math.max(...currentSeats.map(s => s.col_num)) : 8;
         grid.style.gridTemplateColumns = `repeat(${colsCount}, minmax(0, 1fr))`;
-        
+
         // 数据准备妥当后再行秒级刷新 DOM
         grid.innerHTML = "";
         grid.style.opacity = "1";
@@ -687,7 +682,7 @@ async function loadSeats(showtimeId) {
         currentSeats.forEach(seat => {
             const item = document.createElement("div");
             item.id = `seat-${seat.uid}`;
-            
+
             if (seat.status === 1) {
                 item.className = "seat-item seat-sold";
                 item.innerHTML = `<i class="fa-solid fa-user"></i>`;
@@ -750,13 +745,13 @@ async function refreshCurrentSeats() {
     try {
         // 1. 同步刷新座位图
         await loadSeats(selectedShowtimeId);
-        
+
         // 2. 刷新当前页面的排片列表 (展示最新的余票状态，局部静默刷新)
         await filterShowtimes();
 
         // 3. 重置大缓冲池以保证下一次“幸运秒杀”拉取最新数据
         allShowtimes = [];
-        
+
         showToast("系统座位及余票库存状态同步更新完成！", "success");
     } catch (error) {
         showToast("同步失败: " + error.message, "danger");
@@ -786,14 +781,14 @@ async function handleBookTicket() {
 
     const btn = document.getElementById("book-ticket-btn");
     const randBtn = document.getElementById("random-book-btn");
-    
+
     // 【物理 CLS 防抖锁】：动态抓取当前两个按钮在屏幕上的物理实际宽度并硬编码锁定 style.width！
     // 保证在 loading 期间，文案字符长度缩减绝对不会引发按钮拉伸和横向推挤抖动！
     const originalBtnWidth = btn.getBoundingClientRect().width;
     const originalRandWidth = randBtn.getBoundingClientRect().width;
     btn.style.width = `${originalBtnWidth}px`;
     randBtn.style.width = `${originalRandWidth}px`;
-    
+
     btn.disabled = true;
     randBtn.disabled = true;
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-1"></i>正在签发...`;
@@ -822,7 +817,7 @@ async function handleBookTicket() {
         if (isSigCheckEnabled || isSigSm3CheckEnabled) {
             const timestamp = Date.now().toString();
             const nonce = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-            
+
             requestHeaders["X-Timestamp"] = timestamp;
             requestHeaders["X-Nonce"] = nonce;
 
@@ -853,10 +848,10 @@ async function handleBookTicket() {
         }
 
         showToast(`🎉 锁定星格成功！您已成功购买《${movieTitle}》 ${roomName} ${seatInfo} 观影席！请凭个人星河凭证准时入场观影。`, "success");
-        
+
         // 彻底清空临时选座
         selectedSeatId = null;
-        
+
         // 【零闪烁局部DOM刷新】不全量重新拉取排片列表，只定向更新当前卡片的余票数据
         const inventoryBadge = document.getElementById(`showtime-inventory-${selectedShowtimeId}`);
         if (inventoryBadge) {
@@ -883,10 +878,10 @@ async function handleBookTicket() {
         // 无论成功与否均还原订票按钮文本及状态，并彻底释放物理 CLS 防抖锁
         btn.innerHTML = `<i class="fa-solid fa-ticket me-1"></i>✨ 立即锁定星格 (一键出票)`;
         btn.disabled = !selectedSeatId;
-        
+
         btn.style.width = "";
         randBtn.style.width = "";
-        
+
         // random-book-btn 的启用状态由 loadSeats 或座位状态动态决定
         if (currentSeats && currentSeats.length > 0) {
             const isSoldOut = currentSeats.every(s => s.status === 1);
@@ -917,7 +912,7 @@ function handleRandomBookTicket() {
 
     // 随机抽取一个
     const luckySeat = available[Math.floor(Math.random() * available.length)];
-    
+
     // UI 高亮选中
     selectSeat(luckySeat.uid);
     showToast(`系统已为您闪电锁定了 [${luckySeat.row_num}排${luckySeat.col_num}列] 黄金座位，正在飞速出票中...`, "info");
@@ -954,7 +949,7 @@ async function handleLuckyDrawBookTicket() {
 
     // 2. 随机挑选一个幸运场次
     const luckyShowtime = luckyShowtimes[Math.floor(Math.random() * luckyShowtimes.length)];
-    
+
     showToast(`✨ 幸运流转中！已为您锁定：《${luckyShowtime.movie.title}》（${luckyShowtime.room.name}），正在挑选座位...`, "info");
 
     try {
@@ -979,25 +974,25 @@ async function handleLuckyDrawBookTicket() {
 
         // 6. 将联动日期选择器、下拉电影及场次高亮绑定，绝对时区隔离
         const sDateStr = luckyShowtime.start_time.split('T')[0]; // "YYYY-MM-DD"
-        
+
         // 联动更新检索栏组件
         document.getElementById("filter-date").value = sDateStr;
         document.getElementById("filter-movie").value = luckyShowtime.movie.uid;
         document.getElementById("filter-room").value = "all";
         document.getElementById("filter-time-range").value = "all";
         document.getElementById("filter-search-name").value = "";
-        
+
         // 分页重置为 1 并发起远程数据带参筛选
         currentPage = 1;
         await filterShowtimes();
-        
+
         // 加载选中场次及座位图
         selectedShowtimeId = luckyShowtime.uid;
         const seatingSec = document.getElementById("seating-section");
         seatingSec.classList.remove("d-none");
         seatingSec.classList.add("fade-in-up");
         document.getElementById("seating-title").textContent = `《${luckyShowtime.movie.title}》 - ${luckyShowtime.room.name} 在线座位选择`;
-        
+
         // 渲染座位图状态并绑定选中
         currentSeats = seats;
         const grid = document.getElementById("seat-grid-container");
@@ -1009,7 +1004,7 @@ async function handleLuckyDrawBookTicket() {
         currentSeats.forEach(seat => {
             const item = document.createElement("div");
             item.id = `seat-${seat.uid}`;
-            
+
             if (seat.status === 1) {
                 item.className = "seat-item seat-sold";
                 item.innerHTML = `<i class="fa-solid fa-user"></i>`;
@@ -1023,7 +1018,7 @@ async function handleLuckyDrawBookTicket() {
 
         // 触发 UI 选中
         selectSeat(luckySeat.uid);
-        
+
         // 滚动视口到座位区，带来震撼顺滑体验
         document.getElementById("seating-section").scrollIntoView({ behavior: 'smooth' });
 
@@ -1048,7 +1043,7 @@ async function loadCinemaConfig() {
 
         // 设置 Switch 及 select 状态
         document.getElementById("config-pool").value = conf.pool_mode;
-        
+
         const poolBadge = document.getElementById("pool-badge");
         if (conf.pool_mode === "queue") {
             poolBadge.textContent = "高并发长连接池 (QueuePool)";
@@ -1060,7 +1055,7 @@ async function loadCinemaConfig() {
 
         // 设置 Radio 锁状态
         document.getElementById(`lock-${conf.lock_mode}`).checked = true;
-        
+
         // 设置 Switch 慢查询和签名状态
         document.getElementById("config-slow-query").checked = conf.slow_query;
         document.getElementById("config-signature").checked = conf.signature_check;
@@ -1152,7 +1147,7 @@ async function executeReset() {
         }
 
         showToast("星空影城全系统数据重置归档成功！营业出票数据已清空，30天排片已重新就绪！", "success");
-        
+
         // 彻底重设选中座位和场次状态
         selectedShowtimeId = null;
         selectedSeatId = null;
@@ -1161,7 +1156,7 @@ async function executeReset() {
         currentPage = 1;
         totalCount = 0;
         document.getElementById("seating-section").classList.add("d-none");
-        
+
         await loadShowtimes();
     } catch (error) {
         showToast(error.message, "danger");
@@ -1175,31 +1170,31 @@ async function loadMyTickets() {
     if (!currentToken || currentRole !== "user") {
         return;
     }
-    
+
     const container = document.getElementById("tickets-list-container");
     const countBadge = document.getElementById("ticket-count-badge");
     if (!container || !countBadge) return;
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/cinema/orders`, {
             headers: {
                 "Authorization": `Bearer ${currentToken}`
             }
         });
-        
+
         const res = await response.json();
         if (!response.ok) {
             throw new Error(res.error_info || "获取购票记录失败");
         }
-        
+
         const tickets = res.data || [];
         countBadge.textContent = `${tickets.length} 张`;
-        
+
         if (tickets.length === 0) {
             container.innerHTML = `<div class="text-center text-secondary py-4 small"><i class="fa-solid fa-receipt me-1"></i>暂无购票记录</div>`;
             return;
         }
-        
+
         // 1. 按放映日期 (YYYY-MM-DD) 进行分组
         const groups = {};
         tickets.forEach(ticket => {
@@ -1209,21 +1204,21 @@ async function loadMyTickets() {
             }
             groups[dateStr].push(ticket);
         });
-        
+
         // 2. 将日期 Key 从远到近或近到远排序 (我们用近到远排序，最新的日期排在最上面)
         const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
-        
+
         let html = "";
         const now = new Date();
-        
+
         sortedDates.forEach(dateStr => {
             const ticketsInDate = groups[dateStr];
-            
+
             // 将 YYYY-MM-DD 转化为漂亮的“MM月DD日 周几”
             const d = new Date(dateStr);
             const weekDays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
             const formattedDate = `${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日 ${weekDays[d.getDay()]}`;
-            
+
             html += `
                 <div class="date-group mb-3 border border-secondary border-opacity-35 rounded p-3 bg-dark bg-opacity-20">
                     <div class="d-flex align-items-center mb-2 pb-2 border-bottom border-secondary border-opacity-25">
@@ -1233,12 +1228,12 @@ async function loadMyTickets() {
                     </div>
                     <div class="d-flex flex-column gap-2">
             `;
-            
+
             ticketsInDate.forEach(ticket => {
                 // 放映时间格式化
                 const timePart = ticket.start_time.split('T')[1];
                 const startTimeStr = timePart ? timePart.substring(0, 5) : "00:00";
-                
+
                 // 时长计算出结束时间
                 let endTimeStr = "";
                 if (timePart) {
@@ -1248,16 +1243,16 @@ async function loadMyTickets() {
                     const endM = totalMins % 60;
                     endTimeStr = ` - ${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
                 }
-                
+
                 // 判断是否过期
                 const showDateTime = new Date(ticket.start_time);
                 const isExpired = showDateTime < now;
-                
+
                 // 确定状态与样式
                 let badgeHtml = "";
                 let itemClass = "list-group-item bg-dark bg-opacity-40 text-white d-flex align-items-center justify-content-between p-2 rounded flex-wrap gap-2";
                 let actionHtml = "";
-                
+
                 if (ticket.status === 2) {
                     // 已退票
                     badgeHtml = `<span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-50" style="font-size: 10px;"><i class="fa-solid fa-arrow-rotate-left me-1"></i>已退票</span>`;
@@ -1273,7 +1268,7 @@ async function loadMyTickets() {
                     badgeHtml = `<span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50" style="font-size: 10px;"><i class="fa-solid fa-circle-check me-1"></i>支付成功</span>`;
                     actionHtml = `<button class="btn btn-outline-danger btn-sm py-0 px-2" onclick="handleRefund('${ticket.uid}', '${ticket.showtime_id}')" style="font-size: 11px; height: 22px; line-height: 20px;">退票</button>`;
                 }
-                
+
                 html += `
                     <div class="${itemClass}" style="border: 1px solid rgba(255,255,255,0.05);">
                         <div class="d-flex align-items-center gap-2">
@@ -1297,13 +1292,13 @@ async function loadMyTickets() {
                     </div>
                 `;
             });
-            
+
             html += `
                     </div>
                 </div>
             `;
         });
-        
+
         container.innerHTML = html;
     } catch (error) {
         console.error("加载已购选票异常:", error);
@@ -1316,7 +1311,7 @@ function toggleProfile(forceView = null) {
     const bookingSection = document.getElementById("cinema-booking-section");
     const profileSection = document.getElementById("profile-section");
     const profileBtn = document.getElementById("profile-btn");
-    
+
     // 如果指定了强制视图状态
     let showProfile = false;
     if (forceView === "profile") {
@@ -1327,7 +1322,7 @@ function toggleProfile(forceView = null) {
         // 否则根据 d-none 动态切换
         showProfile = profileSection.classList.contains("d-none");
     }
-    
+
     if (showProfile) {
         bookingSection.classList.add("d-none");
         profileSection.classList.remove("d-none");
@@ -1356,13 +1351,13 @@ function resetMyTicketsPagination() {
         ticketObserver.disconnect();
         ticketObserver = null;
     }
-    
+
     const activeContainer = document.getElementById("active-tickets-container");
     const refundedContainer = document.getElementById("refunded-tickets-container");
     const refundedSec = document.getElementById("refunded-tickets-section");
     const countBadge = document.getElementById("ticket-count-badge");
     const triggerEl = document.getElementById("tickets-loading-trigger");
-    
+
     if (activeContainer) activeContainer.innerHTML = `<div class="col-12 text-center text-secondary py-3 small">🪐 您的星空足迹尚未起航，快去挑选一场心动影片吧</div>`;
     if (refundedContainer) refundedContainer.innerHTML = "";
     if (refundedSec) refundedSec.classList.add("d-none");
@@ -1378,11 +1373,11 @@ async function renderUserProfileCard() {
         }
         return;
     }
-    
+
     const avatarImg = document.getElementById("profile-avatar");
     if (currentUserProfile.avatar) {
-        avatarImg.src = currentUserProfile.avatar.startsWith("data:") 
-            ? currentUserProfile.avatar 
+        avatarImg.src = currentUserProfile.avatar.startsWith("data:")
+            ? currentUserProfile.avatar
             : `data:image/png;base64,${currentUserProfile.avatar}`;
     } else {
         avatarImg.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23334155'/><path d='M25 80c0-15 10-20 25-20s25 5 25 20' fill='%2364748b'/><circle cx='50' cy='35' r='15' fill='%2364748b'/></svg>";
@@ -1390,7 +1385,7 @@ async function renderUserProfileCard() {
 
     document.getElementById("profile-fullname").textContent = currentUserProfile.full_name || "-";
     document.getElementById("profile-email").textContent = currentUserProfile.email || "-";
-    
+
     let genderText = "未知";
     if (currentUserProfile.gender === 0) genderText = "女 👩";
     else if (currentUserProfile.gender === 1) genderText = "男 👨";
@@ -1414,45 +1409,45 @@ async function loadMyTickets(isLoadMore = false) {
     if (!currentToken || currentRole !== "user") {
         return;
     }
-    
+
     if (!isLoadMore) {
         resetMyTicketsPagination();
     }
-    
+
     if (!myTicketsHasMore || isMyTicketsLoading) {
         return;
     }
-    
+
     isMyTicketsLoading = true;
     const triggerEl = document.getElementById("tickets-loading-trigger");
     if (triggerEl) {
         triggerEl.classList.remove("d-none");
     }
-    
+
     const offset = (myTicketsPage - 1) * myTicketsLimit;
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/cinema/orders?limit=${myTicketsLimit}&offset=${offset}`, {
             headers: {
                 "Authorization": `Bearer ${currentToken}`
             }
         });
-        
+
         const res = await response.json();
         if (!response.ok) {
             throw new Error(res.error_info || "获取购票记录失败");
         }
-        
+
         const newTickets = res.data || [];
         if (newTickets.length < myTicketsLimit) {
             myTicketsHasMore = false;
         }
-        
+
         loadedTickets = loadedTickets.concat(newTickets);
         myTicketsPage++;
-        
+
         renderMyTickets();
-        
+
     } catch (error) {
         console.error("加载已购选票异常:", error);
         showToast(error.message, "danger");
@@ -1471,14 +1466,14 @@ function setupTicketScrollObserver() {
         ticketObserver.disconnect();
         ticketObserver = null;
     }
-    
+
     if (!myTicketsHasMore) return;
-    
+
     const triggerEl = document.getElementById("tickets-loading-trigger");
     if (!triggerEl) return;
-    
+
     triggerEl.classList.remove("d-none");
-    
+
     ticketObserver = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting) {
             loadMyTickets(true);
@@ -1488,7 +1483,7 @@ function setupTicketScrollObserver() {
         rootMargin: "100px",
         threshold: 0.1
     });
-    
+
     ticketObserver.observe(triggerEl);
 }
 
@@ -1498,20 +1493,20 @@ function renderMyTickets() {
     const refundedContainer = document.getElementById("refunded-tickets-container");
     const refundedSec = document.getElementById("refunded-tickets-section");
     const countBadge = document.getElementById("ticket-count-badge");
-    
+
     if (!activeContainer || !refundedContainer || !refundedSec || !countBadge) return;
-    
+
     const activeTickets = loadedTickets.filter(t => t.status === 1);
     const refundedTickets = loadedTickets.filter(t => t.status === 2);
-    
+
     countBadge.textContent = `${activeTickets.length} 张`;
-    
+
     if (activeTickets.length === 0) {
         activeContainer.innerHTML = `<div class="col-12 text-center text-secondary py-3 small">🪐 您的星空足迹尚未起航，快去挑选一场心动影片吧</div>`;
     } else {
         activeContainer.innerHTML = buildTicketsHtmlGroup(activeTickets);
     }
-    
+
     if (refundedTickets.length === 0) {
         refundedSec.classList.add("d-none");
         refundedContainer.innerHTML = "";
@@ -1528,17 +1523,17 @@ function buildTicketsHtmlGroup(tickets) {
         if (!groups[dateStr]) groups[dateStr] = [];
         groups[dateStr].push(ticket);
     });
-    
+
     const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
     let html = "";
     const now = new Date();
-    
+
     sortedDates.forEach(dateStr => {
         const ticketsInDate = groups[dateStr];
         const d = new Date(dateStr);
         const weekDays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
         const formattedDate = `${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日 ${weekDays[d.getDay()]}`;
-        
+
         html += `
             <div class="date-group mb-3 border border-secondary border-opacity-35 rounded p-3 bg-dark bg-opacity-20">
                 <div class="d-flex align-items-center mb-2 pb-2 border-bottom border-secondary border-opacity-25">
@@ -1548,11 +1543,11 @@ function buildTicketsHtmlGroup(tickets) {
                 </div>
                 <div class="d-flex flex-column gap-2">
         `;
-        
+
         ticketsInDate.forEach(ticket => {
             const timePart = ticket.start_time.split('T')[1];
             const startTimeStr = timePart ? timePart.substring(0, 5) : "00:00";
-            
+
             let endTimeStr = "";
             if (timePart) {
                 const [h, m] = startTimeStr.split(':').map(Number);
@@ -1561,14 +1556,14 @@ function buildTicketsHtmlGroup(tickets) {
                 const endM = totalMins % 60;
                 endTimeStr = ` - ${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
             }
-            
+
             const showDateTime = new Date(ticket.start_time);
             const isExpired = showDateTime < now;
-            
+
             let badgeHtml = "";
             let itemClass = "list-group-item bg-dark bg-opacity-40 text-white d-flex align-items-center justify-content-between p-2 rounded flex-wrap gap-2";
             let actionHtml = "";
-            
+
             if (isExpired) {
                 badgeHtml = `<span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-50" style="font-size: 10px;"><i class="fa-solid fa-clock-rotate-left me-1"></i>已放映</span>`;
                 itemClass += " opacity-40";
@@ -1577,7 +1572,7 @@ function buildTicketsHtmlGroup(tickets) {
                 badgeHtml = `<span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50" style="font-size: 10px;"><i class="fa-solid fa-circle-check me-1"></i>支付成功</span>`;
                 actionHtml = `<button class="btn btn-outline-danger btn-sm py-0 px-2" onclick="handleRefund('${ticket.uid}', '${ticket.showtime_id}')" style="font-size: 11px; height: 22px; line-height: 20px;">退票</button>`;
             }
-            
+
             html += `
                 <div class="${itemClass}" style="border: 1px solid rgba(255,255,255,0.05);">
                     <div class="d-flex align-items-center gap-2">
@@ -1601,7 +1596,7 @@ function buildTicketsHtmlGroup(tickets) {
                 </div>
             `;
         });
-        
+
         html += `
                 </div>
             </div>
@@ -1616,11 +1611,11 @@ function buildTicketsHtmlList(tickets) {
         const sDateStr = ticket.start_time.split('T')[0];
         const timePart = ticket.start_time.split('T')[1];
         const startTimeStr = timePart ? timePart.substring(0, 5) : "00:00";
-        
+
         const badgeHtml = `<span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-50" style="font-size: 10px;"><i class="fa-solid fa-arrow-rotate-left me-1"></i>已退票</span>`;
         const itemClass = "list-group-item bg-dark bg-opacity-40 text-white d-flex align-items-center justify-content-between p-2 rounded flex-wrap gap-2 opacity-50";
         const actionHtml = `<span class="text-secondary small" style="font-size: 11px;">已退订退款</span>`;
-        
+
         html += `
             <div class="${itemClass}" style="border: 1px solid rgba(255,255,255,0.05);">
                 <div class="d-flex align-items-center gap-2">
@@ -1651,11 +1646,11 @@ async function handleRefund(orderId, showtimeId) {
     const confirmBtn = document.getElementById("execute-refund-btn");
     const refundModalEl = document.getElementById("refundConfirmModal");
     const refundModal = bootstrap.Modal.getOrCreateInstance(refundModalEl);
-    
+
     // 每次打开弹窗时，确保按钮处于可点击状态，且文字复原
     confirmBtn.disabled = false;
     confirmBtn.textContent = "☄️ 确认退票 (秒级回款)";
-    
+
     confirmBtn.onclick = async () => {
         confirmBtn.disabled = true;
         confirmBtn.textContent = "☄️ 正在退票...";
@@ -1665,13 +1660,12 @@ async function handleRefund(orderId, showtimeId) {
         confirmBtn.disabled = false;
         confirmBtn.textContent = "☄️ 确认退票 (秒级回款)";
     };
-    
+
     refundModal.show();
 }
 
 async function executeRefundRequest(orderId, showtimeId) {
     const url = `${API_BASE_URL}/cinema/order/${orderId}/refund`;
-    console.log(`[Refund Debug] Sending POST to: ${url}`);
     try {
         const response = await fetch(url, {
             method: "POST",
@@ -1679,21 +1673,20 @@ async function executeRefundRequest(orderId, showtimeId) {
                 "Authorization": `Bearer ${currentToken}`
             }
         });
-        
+
         let res;
         try {
             res = await response.json();
         } catch (e) {
             throw new Error(`解析服务器JSON失败 (HTTP ${response.status}) \nURL: ${url}`);
         }
-        
-        console.log(`[Refund Debug] Response Status: ${response.status}, Content:`, res);
-        
+
+
         if (!response.ok) {
             const errMsg = `${res.error_info || res.message || '退票失败'} (HTTP ${response.status}) \nURL: ${url}`;
             throw new Error(errMsg);
         }
-        
+
         // 提前捞取退票的电影名字和座位号，拼装成宇宙情怀级 Toast！
         const refundObj = loadedTickets.find(t => t.uid === orderId);
         let movieTitle = "影片";
@@ -1704,13 +1697,13 @@ async function executeRefundRequest(orderId, showtimeId) {
         }
 
         showToast(`☄️ 物理撤销成功！已为您成功退订《${movieTitle}》 ${seatInfo} 观影席，票单款已秒级原路退回到您的星河账户。`, "success");
-        
+
         // 【物理零损局部状态同步】：直接在本地 loadedTickets 里更新对应订单的状态！
         // 绝对不需要重新网络拉取，保持完美滚动加载的分页高度！
         if (refundObj) {
             refundObj.status = 2;
         }
-        
+
         // 同步影厅余票
         if (showtimeId && showtimeId !== "undefined") {
             const inventoryBadge = document.getElementById(`showtime-inventory-${showtimeId}`);
@@ -1724,17 +1717,17 @@ async function executeRefundRequest(orderId, showtimeId) {
                     }
                 }
             }
-            
+
             const showtimeObj = allShowtimes.find(s => s.uid === showtimeId);
             if (showtimeObj && showtimeObj.remaining_inventory < 40) {
                 showtimeObj.remaining_inventory += 1;
             }
-            
+
             if (selectedShowtimeId === showtimeId) {
                 await loadSeats(selectedShowtimeId);
             }
         }
-        
+
         // 瞬间物理重绘已购列表，0 毫秒完美响应！
         renderMyTickets();
     } catch (error) {
