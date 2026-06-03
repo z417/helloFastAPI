@@ -1,4 +1,4 @@
-# Starry Cinema 星空影城在线票务性能靶场
+# 影城在线票务性能靶场
 
 [![CI](https://github.com/z417/helloFastAPI/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/z417/helloFastAPI/actions/workflows/ci.yml)
 

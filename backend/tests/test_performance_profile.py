@@ -55,7 +55,7 @@ async def test_concurrency_and_performance_switches_comparison():
     3. 系统降级时延：慢查询启用 (挂起阻塞) vs 慢查询关闭 (秒开)
     """
     print("\n" + "=" * 80)
-    print(" 🚀 星空影城高并发性能与锁一致性硬编码教学演示看板 ")
+    print("影城高并发性能与锁一致性硬编码教学演示看板 ")
     print("=" * 80)
 
     # 1. 强行在全局 settings 中初始化，避免测试间共享状态污染

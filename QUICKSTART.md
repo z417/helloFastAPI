@@ -1,4 +1,4 @@
-# Starry Cinema 星空影城 - 极速上手与生产部署指南 (Quick Start)
+# 影城 - 极速上手与生产部署指南 (Quick Start)
 
 > [!IMPORTANT]
 > 本指南收录本地开发联调、生产级部署指令、高并发调优及全栈容器化配置。

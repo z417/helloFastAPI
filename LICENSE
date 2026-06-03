@@ -1,4 +1,4 @@
-Starry Cinema 星空影城在线票务性能靶场
+影城在线票务性能靶场
 Educational Non-Commercial License (ENCL) v1.0
 
 Copyright (c) 2024-2026, z417 / Yuri. All rights reserved.
@@ -7,7 +7,7 @@ Copyright (c) 2024-2026, z417 / Yuri. All rights reserved.
 PREAMBLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-This Software ("Starry Cinema 星空影城在线票务性能靶场", including all
+This Software ("影城在线票务性能靶场", including all
 associated source code, documentation, configuration files, and assets,
 hereinafter "the Software") is the exclusive intellectual property of
 the copyright holder named above.
@@ -92,10 +92,9 @@ authorization from the copyright holder:
        controlled internal benchmarking environments.
 
   3.3  BRAND EXPLOITATION
-       You may not use the name "Starry Cinema", "星空影城", "星穹影城",
-       or the names of the copyright holders to endorse, promote, or
-       market any product, service, or derivative work without express
-       prior written consent.
+       You may not use the name "影城", or the names of the copyright 
+       holders to endorse, promote, or market any product, service, or 
+       derivative work without express prior written consent.
 
   3.4  OBFUSCATION & DRM
        You may not apply technical measures to circumvent, restrict,
