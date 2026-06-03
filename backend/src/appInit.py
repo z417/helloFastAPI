@@ -4,8 +4,8 @@ from uuid import uuid1
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.cors import CORSMiddleware
 
-from src.Auth import auth_router
-from src.Cinema import cinema_router
+from src.Auth.router import router as auth_router
+from src.Cinema.router import router as cinema_router
 from src.FileCodeBox.router import router as file_code_box_router
 from src.settings import settings
 from src.utils import L

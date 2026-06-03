@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import AsyncGenerator, Optional, Tuple
+from typing import Any, AsyncGenerator, Optional, Tuple
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
@@ -55,7 +55,7 @@ async def get_async_engine() -> AsyncEngine:
             _current_db_url = str(settings.DB_URL)
             _last_db_file_stat = current_stat
 
-            engine_kwargs = {}
+            engine_kwargs: dict[str, Any] = {}
             if _current_pool_mode == "null":
                 L.info("连接池热载切换：[禁用长连接池] (NullPool)")
                 engine_kwargs["poolclass"] = NullPool

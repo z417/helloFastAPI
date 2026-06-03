@@ -6,8 +6,8 @@ import bcrypt
 from sqlalchemy import delete, insert, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.Auth.models import User
-from src.Cinema.models import CinemaRoom, Movie, Seat, Showtime, TicketOrder
+from src.Auth import User
+from src.Cinema import CinemaRoom, Movie, Seat, Showtime, TicketOrder
 from src.common import Base
 
 
@@ -238,8 +238,8 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
                 year=target_date.year,
                 month=target_date.month,
                 day=target_date.day,
-                hour=temp["hour"],
-                minute=temp["minute"],
+                hour=int(temp["hour"]),
+                minute=int(temp["minute"]),
             )
 
             # 防阻断：避免排出的今天场次由于时间早于当前时间 + 3小时偏移导致被售票拦截
@@ -250,7 +250,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
                 {
                     "uid": uuid4(),
                     "movie_id": m_uids[movie_idx],
-                    "room_id": r_uids[temp["room_idx"]],
+                    "room_id": r_uids[int(temp["room_idx"])],
                     "start_time": st_datetime,
                     "price": temp["price"],
                     "remaining_inventory": 40,

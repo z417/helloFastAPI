@@ -68,7 +68,7 @@ async def reset_database(
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
             with L.catch(message="SSO session restore failed during reset", level="ERROR"):
-                from jose import jwt
+                import jwt
 
                 from src.Auth.config import ALGORITHM, SECRET_KEY
 

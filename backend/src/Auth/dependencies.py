@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta, timezone
-from typing import Mapping, Tuple, Union
+from typing import Any, Mapping, Tuple, Union
 
+import jwt
 from cacheout import LFUCache
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import ExpiredSignatureError, JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.Auth.config import (
@@ -67,9 +67,9 @@ async def renew_token_via_refresh(refresh_token: str, session: AsyncSession) -> 
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid scope for token",
             )
-    except ExpiredSignatureError as e:
+    except jwt.ExpiredSignatureError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired") from e
-    except JWTError as e:
+    except jwt.InvalidTokenError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token") from e
 
     email = payload.get("sub")
@@ -91,7 +91,7 @@ async def renew_token_via_refresh(refresh_token: str, session: AsyncSession) -> 
 
 async def parse_jwt_data(
     token: str = Depends(OAuth2PasswordBearer(tokenUrl=TOKEN_URL)),
-) -> Union[Mapping, HTTPException]:
+) -> Mapping[str, Any]:
     # Limit interface invocation frequency per user per minute
     num = cache.get(token)
     cache.set(token, num + 1 if num else 1, ttl=1 * 60)
@@ -103,17 +103,17 @@ async def parse_jwt_data(
         )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except ExpiredSignatureError as e:
+    except jwt.ExpiredSignatureError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired") from e
-    except JWTError as e:
+    except jwt.InvalidTokenError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from e
     return payload
 
 
 async def authenticate_user(
-    form_data=Depends(OAuth2PasswordRequestForm),
-    session=Depends(get_async_session),
-) -> Union[User, HTTPException, BadRequestException]:
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: AsyncSession = Depends(get_async_session),
+) -> User:
 
     plain_password = form_data.password
     if auth_settings.BOOKING_SM4_PASSWORD_ENCRYPT:
@@ -130,7 +130,6 @@ async def authenticate_user(
             ct = bytes.fromhex(ct_hex)
 
             # 2. SM4 CBC 模式解密
-            from datetime import datetime, timezone
 
             from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives import padding
@@ -154,12 +153,12 @@ async def authenticate_user(
             now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
 
             if abs(now_ms - ts_ms) > 300000:
-                raise ValueError("接口安全验证失败，加密登录密码已超出 5 分钟有效期 (防重放拦截)")
+                raise ValueError("接口安全验证失败，加密登录密码已超出 5 分钟有效期")
 
         except Exception as e:
             raise BadRequestException(f"密文解密失败，或安全防重放拦截: {str(e)}")
 
-    user: Union[User, None] = (await get_user_by_email(session, form_data.username)).scalar_one_or_none()
+    user = (await get_user_by_email(session, form_data.username)).scalar_one_or_none()
     if user and user.verify_passwd(plain_password):
         if user.user_status == FLAG_USER_STATUS_LOCKED:
             raise HTTPException(status_code=status.HTTP_423_LOCKED, detail="Your account is locked")
@@ -169,8 +168,8 @@ async def authenticate_user(
 
 async def get_current_user(
     payload: dict = Depends(parse_jwt_data),
-    session=Depends(get_async_session),
-) -> Union[User, HTTPException]:
+    session: AsyncSession = Depends(get_async_session),
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -179,7 +178,7 @@ async def get_current_user(
     email = payload.get("sub")
     if not email:
         raise credentials_exception
-    user: Union[User, None] = (await get_user_by_email(session, email)).scalar_one_or_none()
+    user = (await get_user_by_email(session, email)).scalar_one_or_none()
     if not user or user.user_status == FLAG_USER_STATUS_LOCKED:
         raise credentials_exception
 

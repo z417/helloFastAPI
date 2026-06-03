@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import EmailStr, Field, field_serializer, field_validator
 
+from src.Auth.config import auth_settings
 from src.Auth.typed import _NameType
 from src.common import BaseModel
 
@@ -47,9 +48,8 @@ class SignupSchema(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v) -> str:
-        from src.settings import settings
 
-        if settings.AUTH_STRONG_PASSWORD_CHECK:
+        if auth_settings.AUTH_STRONG_PASSWORD_CHECK:
             if len(v) < 8:
                 raise ValueError("Password must be at least 8 characters long")
             if not any(c.isupper() for c in v):

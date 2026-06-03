@@ -4,7 +4,7 @@ import httpx
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport
-from jose import jwt
+import jwt
 
 from src.Auth import auth_settings
 from src.Auth.config import ALGORITHM, SECRET_KEY
