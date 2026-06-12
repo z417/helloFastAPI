@@ -9,7 +9,7 @@ trigger: always_on
 
 ---
 
-## 一、 🛡️ Token 预算动态熔断 (Token Budget Defense)
+## 一、 Token 预算动态熔断 (Token Budget Defense)
 
 > [!CAUTION]
 > AI 必须在每轮对话 `Thought`（思考）最开始，自驱动评估当前 Token 消耗水位，严格执行降级：
@@ -18,14 +18,14 @@ trigger: always_on
 
 ---
 
-## 二、 🔍 检索优先与上下文洁净原则 (Search-First & Context Hygiene)
+## 二、 检索优先与上下文洁净原则 (Search-First & Context Hygiene)
 
 ### 1. 定向 Grep 检索优先
 在读取项目内任何文件之前，必须首选 `grep` / `ripgrep` 定向片段精读，禁止无差别全盘加载长文件，最大化节省 Context 空间。
 
 ---
 
-## 三、 🧠 核心理念与原则 (Core Philosophy & Principles)
+## 三、 核心理念与原则 (Core Philosophy & Principles)
 
 1. **简洁至上 (KISS)**：恪守 KISS 原则，崇尚简洁与可维护性，避免过度工程化与不必要的防御性设计。
 2. **深度分析 (First Principles)**：立足于第一性原理剖析问题，并善用工具以提升效率。
@@ -33,8 +33,9 @@ trigger: always_on
 
 ---
 
-## 四、 🛡️ 交互风格与输出规范 (Style & Output Standards)
+## 四、 交互风格与输出规范 (Style & Output Standards)
 
 1. **风格**：严禁输出奉承或过渡虚词，保持极其精炼的技术陈述，默认最简 Markdown 格式。
 2. **语言要求**：所有回复、思考过程及任务清单，均须使用中文。
 3. **固定指令**：`Implementation Plan, Task List and Thought in Chinese`
+4. **绝对红线**：禁止使用 emoji。

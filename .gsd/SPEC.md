@@ -1,15 +1,25 @@
 # helloFastAPI System Specification (SPEC)
 
-## 📌 Status: HARDENED & COMPLETED (System Architectural Design)
+## Status: HARDENED & COMPLETED (System Architectural Design)
 
-本规格书专注于影城全栈系统的核心架构设计、数字安全链路、高并发数据一致性协议及底层连接池自愈机制。
+> 本文档规定了项目的底层基建、技术栈选择及代码范式。**所有开发任务必须受限于此文档，禁止 AI 擅自引入本文档未许可的框架或第三方库。**
 
----
+## 1. 系统整体架构与数据实体关联 (ERD)
 
-## 1. 🏗️ 系统整体架构与数据实体关联 (ERD)
+### 1.1 环境与包管理器
+- **Python 环境**：强制使用 **`uv`**（依赖同步：`uv add <pkg>`，执行指令：`uv run <cmd>`）。绝对禁止使用 `pip`、`conda`、`poetry`、`pipenv`。
+- **前端/JS 编译**：强制使用 **`bun`**（依赖同步：`bun install`，执行指令：`bun run <cmd>`）。绝对禁止使用 `npm`、`yarn`、`pnpm`。
 
-系统采用 **FastAPI (Python 3.12)** 作为后端核心服务，配合 **aiosqlite/SQLAlchemy 2.0 异步 ORM** 与前端静态交互层，结构层级如下：
+### 1.2 后端 API 服务
+- FastAPI | Uvicorn | Loguru 结构化日志
 
+### 1.3 异步 ORM 引擎
+- SQLAlchemy 2.0+ 异步体系 | `aiosqlite` (SQLite)
+
+### 1.4 前端 UI 界面
+- Bootstrap | FontAwesome | Vanilla JS
+
+### 1.5 数据实体关联关系图 (Entity Relationship Diagram)
 ```mermaid
 erDiagram
     User ||--o{ TicketOrder : "places"
@@ -72,9 +82,7 @@ erDiagram
     }
 ```
 
----
-
-## 2. 🔐 数字安全链路与国密防御体系 (Security Architecture)
+## 2. 数字安全链路与国密防御体系 (Security Architecture)
 
 系统在登录与购票两大敏感入口部署了高安全强度的防篡改、防重放数字安全防守线。
 
@@ -99,7 +107,7 @@ sequenceDiagram
 
 ---
 
-## 3. ⚡ 高并发一致性与锁退化防御 (Concurrency Control)
+## 3. 高并发一致性与锁退化防御 (Concurrency Control)
 
 靶场购票下单接口位于 `src/Cinema/router.py` 的 `create_booking_order`。其并发一致性协议设计如下：
 
@@ -129,7 +137,7 @@ sequenceDiagram
 
 ---
 
-## 4. 🔄 数据库连接池自愈与热重载单例 (Engine Lifecycle)
+## 4. 数据库连接池自愈与热重载单例 (Engine Lifecycle)
 
 在 `dependencies.py` 中引入了全局自愈型 `AsyncEngine` 管理架构，保证高并发下长连接池的高效复用：
 
