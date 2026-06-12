@@ -1,12 +1,12 @@
 # helloFastAPI Domain & Business Specifications (BUSINESS)
 
-## 📌 Status: HARDENED & COMPLETE
+## Status: HARDENED & COMPLETE
 
 本文件收录影城票务系统的核心领域业务规则、功能逻辑约束与运营指标基准，实现技术与业务规格的解耦。
 
 ---
 
-## 1. 🎬 电影排片与售票安全约束 (Ticketing Lockout Rules)
+## 1. 电影排片与售票安全约束 (Ticketing Lockout Rules)
 
 为了防止高并发下的刷票行为并保障运营安全，系统在排片和售票层执行严格的时间截断：
 
@@ -18,7 +18,7 @@
 
 ---
 
-## 2. 🌱 数据库初始化与种子播种基准 (Seeder Specifications)
+## 2. 数据库初始化与种子播种基准 (Seeder Specifications)
 
 为了确保开发联调及高并发压力测试在播种后立即可用，数据播种引擎执行以下锚点时间偏移规则：
 
@@ -28,7 +28,7 @@
 
 ---
 
-## 3. 🎫 会员订单与个人信息管理 (User Profile & Order History)
+## 3. 会员订单与个人信息管理 (User Profile & Order History)
 
 *   **已购历史与个人中心融合**：
     - 普通会员在成功登录后，其个人中心（`#profile-section`）将融合呈现其真实的头像 Base64/SVG 渲染、姓名、邮箱、生日、性别等敏感数据。
@@ -36,7 +36,7 @@
 
 ---
 
-## 4. ☄️ 退票与防连击防篡改业务规格 (Refund & Anti-Double-Submit Rules)
+## 4. 退票与防连击防篡改业务规格 (Refund & Anti-Double-Submit Rules)
 
 为满足“秒级退款”的极客体验并保障业务数据一致性，退票逻辑执行以下领域安全约束：
 

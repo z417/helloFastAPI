@@ -103,7 +103,7 @@ async def test_concurrency_and_performance_switches_comparison():
         showtime_id = showtime["uid"]
 
         # =====================================================================
-        # 🧪 实验一：并发抢座超卖与锁一致性实证测试 (None vs Pessimistic vs Optimistic)
+        # 实验一：并发抢座超卖与锁一致性实证测试 (None vs Pessimistic vs Optimistic)
         # =====================================================================
         print("\n[ 1. 事务并发锁一致性对比实验 - 抢票冲突防守实证 ]")
 
@@ -131,8 +131,8 @@ async def test_concurrency_and_performance_switches_comparison():
         ]
         results_none = await asyncio.gather(*tasks_none)
         success_none = sum(1 for r in results_none if r.status_code == 201)
-        print(f"  🚩【基础无锁模式】实验结果：成功购票订单数 = {success_none} 张！")
-        print("  ⚠️  警示：成功订单数 > 1，直观证实了高并发无锁状态下的【座位超卖重合冲突】！")
+        print(f"  【基础无锁模式】实验结果：成功购票订单数 = {success_none} 张！")
+        print("  警示：成功订单数 > 1，直观证实了高并发无锁状态下的【座位超卖重合冲突】！")
 
         # --- 场景 B: 悲观锁 (lock_mode = "pessimistic") 并发抢购同一个座位 ---
         await client.post(
@@ -148,11 +148,11 @@ async def test_concurrency_and_performance_switches_comparison():
         ]
         results_pess = await asyncio.gather(*tasks_pess)
         success_pess = sum(1 for r in results_pess if r.status_code == 201)
-        print(f"  🚩【高一致性悲观锁】实验结果：成功购票订单数 = {success_pess} 张！")
+        print(f"  【高一致性悲观锁】实验结果：成功购票订单数 = {success_pess} 张！")
         if success_pess > 1:
-            print("  ⚠️  深度剖析：成功订单数 > 1，直观证实在不支持行锁的 SQLite 引擎中，悲观锁(WITH FOR UPDATE)将悄然失效，直接退化为无锁并造成超卖！")
+            print("  深度剖析：成功订单数 > 1，直观证实在不支持行锁的 SQLite 引擎中，悲观锁(WITH FOR UPDATE)将悄然失效，直接退化为无锁并造成超卖！")
         else:
-            print("  ✅ 安全：成功订单数精确等于 1，说明当前数据库引擎已完美支持悲观排他行锁防御并发。")
+            print("  安全：成功订单数精确等于 1，说明当前数据库引擎已完美支持悲观排他行锁防御并发。")
 
         # --- 场景 C: 乐观锁 (lock_mode = "optimistic") 并发抢购同一个座位 ---
         await client.post(
@@ -168,11 +168,11 @@ async def test_concurrency_and_performance_switches_comparison():
         ]
         results_opt = await asyncio.gather(*tasks_opt)
         success_opt = sum(1 for r in results_opt if r.status_code == 201)
-        print(f"  🚩【乐观锁(CAS原子锁)】实验结果：成功购票订单数 = {success_opt} 张。")
-        print("  ✅ 安全：成功订单数精确等于 1，利用 version 版本号和 Seat 状态 CAS 原子修改完美击退超卖。")
+        print(f"  【乐观锁(CAS原子锁)】实验结果：成功购票订单数 = {success_opt} 张。")
+        print("  安全：成功订单数精确等于 1，利用 version 版本号和 Seat 状态 CAS 原子修改完美击退超卖。")
 
         # =====================================================================
-        # 🧪 实验二：数据库连接池启用与禁用并发时延对比实验 (QueuePool vs NullPool)
+        # 实验二：数据库连接池启用与禁用并发时延对比实验 (QueuePool vs NullPool)
         # =====================================================================
         print("\n[ 2. 数据库连接池性能对比实验 - 高频请求吞吐时延实测 ]")
 
@@ -189,7 +189,7 @@ async def test_concurrency_and_performance_switches_comparison():
         await asyncio.gather(*tasks_pool_on)
         t_pool_on = (time.perf_counter() - t0) * 1000
         avg_pool_on = t_pool_on / 20
-        print(f"  🚩【已启用高性能连接池】: 20 次并发查询总耗时: {t_pool_on:.2f}ms, 单次平均时延: {avg_pool_on:.2f}ms")
+        print(f"  【已启用高性能连接池】: 20 次并发查询总耗时: {t_pool_on:.2f}ms, 单次平均时延: {avg_pool_on:.2f}ms")
 
         # --- 2.2 禁用连接池模式 (每次连接重复销毁，NullPool) ---
         await client.post(
@@ -206,14 +206,14 @@ async def test_concurrency_and_performance_switches_comparison():
         await asyncio.gather(*tasks_pool_off)
         t_pool_off = (time.perf_counter() - t0) * 1000
         avg_pool_off = t_pool_off / 20
-        print(f"  🚩【已禁用连接池(传统经典模式)】: 20 次并发查询总耗时: {t_pool_off:.2f}ms, 单次平均时延: {avg_pool_off:.2f}ms")
+        print(f"  【已禁用连接池(传统经典模式)】: 20 次并发查询总耗时: {t_pool_off:.2f}ms, 单次平均时延: {avg_pool_off:.2f}ms")
 
         diff = avg_pool_off - avg_pool_on
         speedup = (avg_pool_off / avg_pool_on) if avg_pool_on > 0 else 1.0
-        print(f"  🚀 性能提优分析：长连接池重用消除了频繁的TCP握手与单例销毁开销，单次请求响应加速了 {diff:.2f}ms，吞吐性能提升达 {speedup:.1f} 倍！")
+        print(f"  性能提优分析：长连接池重用消除了频繁的TCP握手与单例销毁开销，单次请求响应加速了 {diff:.2f}ms，吞吐性能提升达 {speedup:.1f} 倍！")
 
         # =====================================================================
-        # 🧪 实验三：慢查询模拟注入高延迟防超压降级测试 (Slow Query Simulation)
+        # 实验三：慢查询模拟注入高延迟防超压降级测试 (Slow Query Simulation)
         # =====================================================================
         print("\n[ 3. 硬件负载降级慢查询对比实验 - 系统防重复打击自愈能力 ]")
 
@@ -229,10 +229,10 @@ async def test_concurrency_and_performance_switches_comparison():
         # 发起一次查询
         r_slow = await client.get("/api/cinema/showtimes", headers={"Authorization": f"Bearer {user_token}"})
         t_slow = time.perf_counter() - t0
-        print(f"  🚩【开启硬件降级慢查询】：单次响应时延 = {t_slow:.2f} 秒！")
+        print(f"  【开启硬件降级慢查询】：单次响应时延 = {t_slow:.2f} 秒！")
         assert r_slow.status_code == 200
         assert t_slow >= 0.5, "慢查询延迟注入未能生效"
-        print("  ⚠️  警示：开启后，线程瞬间被强行阻塞0.5秒，极易诱发前端无防抖按钮被疯狂连击、进而雪崩压垮后台连接池！")
+        print("  警示：开启后，线程瞬间被强行阻塞0.5秒，极易诱发前端无防抖按钮被疯狂连击、进而雪崩压垮后台连接池！")
 
         # --- 3.2 关闭慢查询 ---
         await client.post(
@@ -244,7 +244,7 @@ async def test_concurrency_and_performance_switches_comparison():
         t0 = time.perf_counter()
         await client.get("/api/cinema/showtimes", headers={"Authorization": f"Bearer {user_token}"})
         t_fast = time.perf_counter() - t0
-        print(f"  🚩【关闭硬件降级慢查询】：单次响应时延 = {t_fast:.2f} 秒 (正常秒级秒开)")
+        print(f"  【关闭硬件降级慢查询】：单次响应时延 = {t_fast:.2f} 秒 (正常秒级秒开)")
 
         # 还原配置，防止对其他单元测试和前端压测造成干扰
         await client.post(
@@ -254,5 +254,5 @@ async def test_concurrency_and_performance_switches_comparison():
         )
 
         print("\n" + "=" * 80)
-        print(" 🎉 所有教学演示并发测试全部完美通过，各项性能指标开关对比实证无懈可击！ ")
+        print(" 所有教学演示并发测试全部完美通过，各项性能指标开关对比实证无懈可击！ ")
         print("=" * 80)

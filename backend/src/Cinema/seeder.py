@@ -99,7 +99,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
         ("三傻大闹宝莱坞", 171, "9.2", "剧情 / 喜剧 / 爱情", "做你热爱的事，成功就会不期而遇。"),
         ("海上钢琴师", 165, "9.3", "剧情 / 音乐", "每个人都要走一条自己坚定了的路。"),
         ("放牛班的春天", 97, "9.3", "剧情 / 音乐", "天籁歌声洗涤孤儿心灵，充满阳光。"),
-        ("机器人总动员", 98, "9.3", "动画 / 科幻 / 冒险", "小瓦力，大人生，跨越星系只为你。"),
+        ("机器人总动员", 98, "9.3", "动画 / 科幻 / 冒险", "小瓦力，大人生，跨越漫长旅程只为你。"),
         ("大话西游之大圣娶亲", 95, "9.2", "喜剧 / 爱情 / 奇幻", "一生所爱，苦海无涯。"),
         ("熔炉", 125, "9.3", "剧情", "我们奋战不是为了改变世界，而是不让世界改变我们。"),
         ("疯狂动物城", 108, "9.2", "动画 / 喜剧 / 冒险", "迪士尼乌托邦，勇敢追梦，无所畏惧。"),
@@ -170,7 +170,7 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
         ("射雕英雄传", 110, "9.1", "武侠 / 古装", "铁血丹心，华语武侠的黄金时代。"),
         ("素媛", 122, "9.3", "剧情", "最深痛的社会题材，最温情的守护自愈。"),
         ("幸福终点站", 128, "8.8", "剧情 / 喜剧 / 爱情", "在机场里建立属于自己的幸福绿洲。"),
-        ("阿凡达", 162, "8.8", "动作 / 科幻", "詹姆斯·卡梅隆的潘多拉星球，开启3D时代。"),
+        ("阿凡达", 162, "8.8", "动作 / 科幻", "詹姆斯·卡梅隆的潘多拉世界，开启3D时代。"),
         ("疯狂原始人", 98, "8.7", "动画 / 喜剧", "咕噜家族的追光之旅，合家欢巅峰。"),
         ("喜剧之王", 85, "8.8", "剧情 / 喜剧", "我养你啊！周星驰的龙套辛酸史。"),
         ("小森林 夏秋篇", 111, "9.0", "剧情", "美食与四季，在大自然中找回内心的宁静。"),
@@ -197,10 +197,10 @@ async def run_reset_and_seed(session: AsyncSession) -> None:
 
     # ==================== Step 4: 播种 4 个精品小型特色影厅 (缩减座位至 5排x8列=40座，控制在50座以内) ====================
     room_list = [
-        {"uid": uuid4(), "name": "🚀 穹顶VIP尊享·银河厅", "total_seats": 40, "is_deleted": 0},
-        {"uid": uuid4(), "name": "🌀 织女星IMAX·激光立体厅", "total_seats": 40, "is_deleted": 0},
-        {"uid": uuid4(), "name": "🎧 幽浮声场·杜比全景声厅", "total_seats": 40, "is_deleted": 0},
-        {"uid": uuid4(), "name": "📼 猎户座经典·胶片情怀厅", "total_seats": 40, "is_deleted": 0},
+        {"uid": uuid4(), "name": "VIP尊享厅", "total_seats": 40, "is_deleted": 0},
+        {"uid": uuid4(), "name": "IMAX激光厅", "total_seats": 40, "is_deleted": 0},
+        {"uid": uuid4(), "name": "杜比全景声厅", "total_seats": 40, "is_deleted": 0},
+        {"uid": uuid4(), "name": "经典胶片厅", "total_seats": 40, "is_deleted": 0},
     ]
     await session.execute(insert(CinemaRoom), room_list)
     await session.flush()
@@ -297,8 +297,8 @@ if __name__ == "__main__":
 
         engine = await get_async_engine()
         async with asynccontextmanager(get_async_session)(engine) as session:
-            print("🚀 正在全面清洗库表，并注入高并发高密度种子数据...")
+            print("正在全面清洗库表，并注入高并发高密度种子数据...")
             await run_reset_and_seed(session)
-            print("✨ 选座票仓数据播种成功！")
+            print("选座票仓数据播种成功！")
 
     asyncio.run(main())

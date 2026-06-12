@@ -1,9 +1,9 @@
 /**
- * Starry Cinema 星空影城在线订票系统 - 前端交互逻辑
+ * 在线影城订票系统 - 前端交互逻辑
  * 强制安全防范，多维度联动筛选，非阻塞 Toast 提示
  */
 
-// 🛠️ API 路由常量注入与自适应自愈逻辑
+// API 路由常量注入与自适应自愈逻辑
 // 1. 优先使用 Bun 编译构建时从 .env 文件或 --define 注入的 process.env.API_URL 常量
 // 2. 若无构建注入（如直接用浏览器打开静态文件开发），则自动启用零配置智能端口自适应解析
 const API_BASE_URL = (typeof process !== "undefined" && process.env && process.env.API_URL)
@@ -19,13 +19,13 @@ const originalFetch = window.fetch;
 window.fetch = async function (...args) {
     const response = await originalFetch(...args);
     if (response.status === 401 && currentToken) {
-        let errMsg = "⚠️ 您的登录会话已失效，请重新登录！";
+        let errMsg = "您的登录会话已失效，请重新登录！";
         try {
             const clone = response.clone();
             const data = await clone.json();
             const detail = data.detail || "";
             if (detail.includes("elsewhere")) {
-                errMsg = "⚠️ 您的账号已在其他终端登录，当前会话已失效，请重新登录！";
+                errMsg = "您的账号已在其他终端登录，当前会话已失效，请重新登录！";
             }
         } catch (e) { }
 
@@ -89,7 +89,7 @@ function showToast(message, type = "info") {
         iconHtml = `<i class="fa-solid fa-triangle-exclamation text-warning fs-5 animate-pulse" style="text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);"></i>`;
         borderClass = "border-warning";
     } else {
-        iconHtml = `<i class="fa-solid fa-meteor text-info fs-5 animate-pulse" style="text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);"></i>`;
+        iconHtml = `<i class="fa-solid fa-circle-info text-info fs-5 animate-pulse" style="text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);"></i>`;
         borderClass = "border-info";
     }
 
@@ -100,6 +100,26 @@ function showToast(message, type = "info") {
 
     const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
     toast.show();
+}
+
+/**
+ * 初始化管理端配置说明 Popover，挂载到 body 避免被卡片容器裁剪
+ */
+function initAdminTipPopovers() {
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach((triggerEl) => {
+        triggerEl.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            triggerEl.focus();
+        });
+
+        new bootstrap.Popover(triggerEl, {
+            container: "body",
+            html: true,
+            sanitize: false,
+            fallbackPlacements: ["bottom", "right", "left"],
+        });
+    });
 }
 
 // ==================== 1. 原生安全签名与UUID正则防御 ====================
@@ -124,6 +144,9 @@ function isValidUUID(uuidStr) {
 
 // ==================== 2. 页面加载初始化 ====================
 document.addEventListener("DOMContentLoaded", () => {
+    // 初始化管理端配置说明悬浮卡片
+    initAdminTipPopovers();
+
     // 动态初始化未来30天日期筛选器的 min 与 max 范围
     initFilterDateBounds();
 
@@ -337,7 +360,7 @@ function handleLogout() {
         profileBtn.className = "btn btn-outline-info btn-sm me-2";
     }
 
-    showToast("已成功退出登录，星空影城期待您的下次光临！", "info");
+    showToast("已成功退出登录，在线影城期待您的下次光临！", "info");
 }
 
 // 刷新 UI 显示自适应状态 (特权管理员与普通会员物理强隔离)
@@ -422,7 +445,7 @@ function populateFilterDropdowns(movies, rooms) {
     const roomSelect = document.getElementById("filter-room");
 
     // 填充电影下拉框
-    movieSelect.innerHTML = `<option value="all">🍿 全部上映电影</option>`;
+    movieSelect.innerHTML = `<option value="all">全部上映电影</option>`;
     movies.forEach(m => {
         const option = document.createElement("option");
         option.value = m.uid;
@@ -431,7 +454,7 @@ function populateFilterDropdowns(movies, rooms) {
     });
 
     // 填充影厅下拉框
-    roomSelect.innerHTML = `<option value="all">🏢 全部上映影厅</option>`;
+    roomSelect.innerHTML = `<option value="all">全部上映影厅</option>`;
     rooms.forEach(r => {
         const option = document.createElement("option");
         option.value = r.uid;
@@ -524,7 +547,7 @@ function renderShowtimes(showtimes) {
     container.innerHTML = "";
 
     if (showtimes.length === 0) {
-        container.innerHTML = `<div class="col-12 text-center text-secondary py-5"><i class="fa-solid fa-compass me-2 text-info animate-pulse"></i>🪐 浩瀚星河中未寻得匹配的光影波动，请微调您的星轨检索参数！</div>`;
+        container.innerHTML = `<div class="col-12 text-center text-secondary py-5"><i class="fa-solid fa-compass me-2 text-info animate-pulse"></i>未找到匹配的排片，请调整检索条件。</div>`;
         return;
     }
 
@@ -558,10 +581,10 @@ function renderShowtimes(showtimes) {
                     <span class="text-secondary text-truncate" style="max-width: 150px;">${genresVal}</span>
                 </div>
 
-                <p class="small text-secondary mb-2 mt-2" style="font-size: 12px;"><i class="fa-solid fa-clock me-1"></i>星光起航：<strong class="text-white">${fullShowTimeStr}</strong></p>
+                <p class="small text-secondary mb-2 mt-2" style="font-size: 12px;"><i class="fa-solid fa-clock me-1"></i>放映时间：<strong class="text-white">${fullShowTimeStr}</strong></p>
                 
                 <div class="d-flex justify-content-between align-items-center mt-2" style="font-size: 12px;">
-                    <span class="small text-secondary">放映星宇：<strong class="text-white">${s.room.name}</strong></span>
+                    <span class="small text-secondary">放映影厅：<strong class="text-white">${s.room.name}</strong></span>
                     <span id="showtime-inventory-${s.uid}" class="badge bg-primary text-white" style="font-size: 10px; letter-spacing: 0.5px;">席位余量: ${s.remaining_inventory} / ${s.room.total_seats}</span>
                 </div>
 
@@ -749,7 +772,7 @@ async function refreshCurrentSeats() {
         // 2. 刷新当前页面的排片列表 (展示最新的余票状态，局部静默刷新)
         await filterShowtimes();
 
-        // 3. 重置大缓冲池以保证下一次“幸运秒杀”拉取最新数据
+        // 3. 重置大缓冲池以保证下一次“幸运出票”拉取最新数据
         allShowtimes = [];
 
         showToast("系统座位及余票库存状态同步更新完成！", "success");
@@ -847,7 +870,7 @@ async function handleBookTicket() {
             throw new Error(res.error_info || "订票请求未通过，请重新选座");
         }
 
-        showToast(`🎉 锁定星格成功！您已成功购买《${movieTitle}》 ${roomName} ${seatInfo} 观影席！请凭个人星河凭证准时入场观影。`, "success");
+        showToast(`购票成功！您已成功购买《${movieTitle}》 ${roomName} ${seatInfo} 观影票，请准时入场观影。`, "success");
 
         // 彻底清空临时选座
         selectedSeatId = null;
@@ -876,7 +899,7 @@ async function handleBookTicket() {
         showToast(error.message, "danger");
     } finally {
         // 无论成功与否均还原订票按钮文本及状态，并彻底释放物理 CLS 防抖锁
-        btn.innerHTML = `<i class="fa-solid fa-ticket me-1"></i>✨ 立即锁定星格 (一键出票)`;
+        btn.innerHTML = `<i class="fa-solid fa-ticket me-1"></i>立即购票 (一键出票)`;
         btn.disabled = !selectedSeatId;
 
         btn.style.width = "";
@@ -892,10 +915,10 @@ async function handleBookTicket() {
     }
 }
 
-// ==================== 7. 闪电随机购票 & 星空幸运秒杀 ====================
+// ==================== 7. 随机购票与幸运出票 ====================
 
 /**
- * 场次内闪电随机选座购票
+ * 场次内快速随机选座购票
  */
 function handleRandomBookTicket() {
     if (!selectedShowtimeId || currentSeats.length === 0) {
@@ -915,19 +938,19 @@ function handleRandomBookTicket() {
 
     // UI 高亮选中
     selectSeat(luckySeat.uid);
-    showToast(`系统已为您闪电锁定了 [${luckySeat.row_num}排${luckySeat.col_num}列] 黄金座位，正在飞速出票中...`, "info");
+    showToast(`系统已为您快速锁定了 [${luckySeat.row_num}排${luckySeat.col_num}列] 黄金座位，正在飞速出票中...`, "info");
 
-    // 闪电秒杀下单
+    // 快速出票下单
     handleBookTicket();
 }
 
 /**
- * 终极特性：“星空幸运选票” 全局随机购票秒杀
+ * 终极特性：“幸运选票” 全局随机购票
  * 业务场景：随机挑选未来 30 天内有余票的日期、电影、场次，完成一键极速选座购票！
  */
 async function handleLuckyDrawBookTicket() {
     // 实时瞬时拉取：每次点击均拉取最新的系统排片状况，彻底防止高并发下的数据过期与超卖冲突
-    showToast("正在闪电获取最新影城排片，准备幸运选票...", "info");
+    showToast("正在快速获取最新影城排片，准备幸运选票...", "info");
     try {
         const response = await fetch(`${API_BASE_URL}/cinema/showtimes?limit=1000`, {
             headers: { "Authorization": `Bearer ${currentToken}` }
@@ -936,7 +959,7 @@ async function handleLuckyDrawBookTicket() {
         const res = await response.json();
         allShowtimes = res.data.showtimes;
     } catch (error) {
-        showToast("秒杀失败: " + error.message, "danger");
+        showToast("出票失败: " + error.message, "danger");
         return;
     }
 
@@ -950,7 +973,7 @@ async function handleLuckyDrawBookTicket() {
     // 2. 随机挑选一个幸运场次
     const luckyShowtime = luckyShowtimes[Math.floor(Math.random() * luckyShowtimes.length)];
 
-    showToast(`✨ 幸运流转中！已为您锁定：《${luckyShowtime.movie.title}》（${luckyShowtime.room.name}），正在挑选座位...`, "info");
+    showToast(`幸运出票中！已为您选定：《${luckyShowtime.movie.title}》（${luckyShowtime.room.name}），正在挑选座位...`, "info");
 
     try {
         // 3. 异步获取该幸运场次的全部座位占用数据
@@ -1023,11 +1046,11 @@ async function handleLuckyDrawBookTicket() {
         document.getElementById("seating-section").scrollIntoView({ behavior: 'smooth' });
 
         // 7. 发起购票下单
-        showToast(`✨ 幸运出票中！已为您锁定《${luckyShowtime.movie.title}》 ${luckyShowtime.room.name} [${luckySeat.row_num}排${luckySeat.col_num}列]！正在出票...`, "success");
+        showToast(`幸运出票中！已为您选定《${luckyShowtime.movie.title}》 ${luckyShowtime.room.name} [${luckySeat.row_num}排${luckySeat.col_num}列]，正在出票...`, "success");
         await handleBookTicket();
 
     } catch (error) {
-        showToast("幸运秒杀出故障了: " + error.message, "danger");
+        showToast("幸运出票出故障了: " + error.message, "danger");
     }
 }
 
@@ -1146,7 +1169,7 @@ async function executeReset() {
             throw new Error(res.error_info || "数据归档初始化失败");
         }
 
-        showToast("星空影城全系统数据重置归档成功！营业出票数据已清空，30天排片已重新就绪！", "success");
+        showToast("影城系统数据重置归档成功！营业出票数据已清空，30天排片已重新就绪！", "success");
 
         // 彻底重设选中座位和场次状态
         selectedShowtimeId = null;
@@ -1183,7 +1206,7 @@ function toggleProfile(forceView = null) {
     if (showProfile) {
         bookingSection.classList.add("d-none");
         profileSection.classList.remove("d-none");
-        profileBtn.innerHTML = `<i class="fa-solid fa-chevron-left me-1"></i>返回星宿轨道`;
+        profileBtn.innerHTML = `<i class="fa-solid fa-chevron-left me-1"></i>返回购票中心`;
         profileBtn.className = "btn btn-outline-warning btn-sm me-2";
         sessionStorage.setItem("current_view", "profile");
         renderUserProfileCard();
@@ -1192,7 +1215,7 @@ function toggleProfile(forceView = null) {
     } else {
         profileSection.classList.add("d-none");
         bookingSection.classList.remove("d-none");
-        profileBtn.innerHTML = `<i class="fa-solid fa-user-astronaut me-1"></i>个人星海舱`;
+        profileBtn.innerHTML = `<i class="fa-solid fa-user me-1"></i>个人中心`;
         profileBtn.className = "btn btn-outline-info btn-sm me-2";
         sessionStorage.setItem("current_view", "booking");
     }
@@ -1215,7 +1238,7 @@ function resetMyTicketsPagination() {
     const countBadge = document.getElementById("ticket-count-badge");
     const triggerEl = document.getElementById("tickets-loading-trigger");
 
-    if (activeContainer) activeContainer.innerHTML = `<div class="col-12 text-center text-secondary py-3 small">🪐 您的星空足迹尚未起航，快去挑选一场心动影片吧</div>`;
+    if (activeContainer) activeContainer.innerHTML = `<div class="col-12 text-center text-secondary py-3 small">暂无有效购票记录，快去挑选一场心动影片吧</div>`;
     if (refundedContainer) refundedContainer.innerHTML = "";
     if (refundedSec) refundedSec.classList.add("d-none");
     if (countBadge) countBadge.textContent = "0 张";
@@ -1244,8 +1267,8 @@ async function renderUserProfileCard() {
     document.getElementById("profile-email").textContent = currentUserProfile.email || "-";
 
     let genderText = "未知";
-    if (currentUserProfile.gender === 0) genderText = "女 👩";
-    else if (currentUserProfile.gender === 1) genderText = "男 👨";
+    if (currentUserProfile.gender === 0) genderText = "女";
+    else if (currentUserProfile.gender === 1) genderText = "男";
     document.getElementById("profile-gender").textContent = genderText;
 
     document.getElementById("profile-birthday").textContent = currentUserProfile.birthday || "未填写";
@@ -1359,7 +1382,7 @@ function renderMyTickets() {
     countBadge.textContent = `${activeTickets.length} 张`;
 
     if (activeTickets.length === 0) {
-        activeContainer.innerHTML = `<div class="col-12 text-center text-secondary py-3 small">🪐 您的星空足迹尚未起航，快去挑选一场心动影片吧</div>`;
+        activeContainer.innerHTML = `<div class="col-12 text-center text-secondary py-3 small">暂无有效购票记录，快去挑选一场心动影片吧</div>`;
     } else {
         activeContainer.innerHTML = buildTicketsHtmlGroup(activeTickets);
     }
@@ -1506,16 +1529,16 @@ async function handleRefund(orderId, showtimeId) {
 
     // 每次打开弹窗时，确保按钮处于可点击状态，且文字复原
     confirmBtn.disabled = false;
-    confirmBtn.textContent = "☄️ 确认退票 (秒级回款)";
+    confirmBtn.textContent = "确认退票 (秒级退款)";
 
     confirmBtn.onclick = async () => {
         confirmBtn.disabled = true;
-        confirmBtn.textContent = "☄️ 正在退票...";
+        confirmBtn.textContent = "正在退票...";
         refundModal.hide();
         await executeRefundRequest(orderId, showtimeId);
         // 恢复按钮状态以供下次打开时使用
         confirmBtn.disabled = false;
-        confirmBtn.textContent = "☄️ 确认退票 (秒级回款)";
+        confirmBtn.textContent = "确认退票 (秒级退款)";
     };
 
     refundModal.show();
@@ -1544,7 +1567,7 @@ async function executeRefundRequest(orderId, showtimeId) {
             throw new Error(errMsg);
         }
 
-        // 提前捞取退票的电影名字和座位号，拼装成宇宙情怀级 Toast！
+        // 提前获取退票的电影名字和座位号，拼装 Toast 提示。
         const refundObj = loadedTickets.find(t => t.uid === orderId);
         let movieTitle = "影片";
         let seatInfo = "座位";
@@ -1553,7 +1576,7 @@ async function executeRefundRequest(orderId, showtimeId) {
             seatInfo = `${refundObj.row_num}排${refundObj.col_num}列`;
         }
 
-        showToast(`☄️ 物理撤销成功！已为您成功退订《${movieTitle}》 ${seatInfo} 观影席，票单款已秒级原路退回到您的星河账户。`, "success");
+        showToast(`退票成功！已为您成功退订《${movieTitle}》 ${seatInfo} 观影票，票款将原路退回到您的账户。`, "success");
 
         // 【物理零损局部状态同步】：直接在本地 loadedTickets 里更新对应订单的状态！
         // 绝对不需要重新网络拉取，保持完美滚动加载的分页高度！
@@ -1612,10 +1635,10 @@ if (typeof window !== "undefined") {
     window.handleRefund = handleRefund;
 }
 
-// 🌌 宇航员大眼睛瞳孔平滑跟随鼠标运动 (极其传神的眼神交互)
+// 登录头像眼睛瞳孔平滑跟随鼠标运动
 if (typeof document !== "undefined") {
     document.addEventListener("mousemove", (event) => {
-        const avatar = document.querySelector(".astronaut-avatar");
+        const avatar = document.querySelector(".login-avatar");
         if (!avatar) return;
 
         // 获取头像在当前视口中的实际物理几何中心
@@ -1633,8 +1656,8 @@ if (typeof document !== "undefined") {
         const offsetX = Math.cos(angle) * maxOffset;
         const offsetY = Math.sin(angle) * maxOffset;
 
-        const pupilLeft = document.getElementById("astro-pupil-left");
-        const pupilRight = document.getElementById("astro-pupil-right");
+        const pupilLeft = document.getElementById("avatar-pupil-left");
+        const pupilRight = document.getElementById("avatar-pupil-right");
 
         if (pupilLeft) {
             pupilLeft.style.transform = `translate(${offsetX}px, ${offsetY}px)`;

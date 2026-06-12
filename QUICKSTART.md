@@ -35,7 +35,7 @@ bun run server.js
 
 ---
 
-## 二、 🚀 生产环境金牌部署指南
+## 二、生产环境金牌部署指南
 
 ### 2.1 生产级裸机/源码部署
 为防止 Dev 调试包（如 pytest）流入生产，请使用 `--no-dev` 参数：
@@ -50,7 +50,7 @@ uv run python -m src.Cinema.seeder
 uv run uvicorn src.main:helloFastApi --workers 4
 ```
 
-### 2.2 💡 前端 API 自适应与构建时环境注入
+### 2.2 前端 API 自适应与构建时环境注入
 前端内置智能地址自适应逻辑，且在 `bun build` 编译时支持常量注入与死码消除：
 ```javascript
 const API_BASE_URL = (typeof process !== "undefined" && process.env && process.env.API_URL)
@@ -197,7 +197,7 @@ http {
 }
 ```
 
-### 2.6 ⚡ 前端代码极限压缩与静态预压缩
+### 2.6 前端代码极限压缩与静态预压缩
 为将首屏加载与传输响应提升至极致，结合 Bun 的混淆混淆与 Nginx `gzip_static` 预压缩：
 ```bash
 # 1. 建立打包发布目录并进行极限 Tree-Shaking 压缩混淆
@@ -213,7 +213,7 @@ gzip -9 -k -f index.html app.js
 - `index.html` 与 `index.html.gz` (体积缩减 75%+)
 - `app.js` 与 `app.js.gz` (体积缩减 80%+)
 
-### 2.7 🐳 容器发布与维护命令
+### 2.7 容器发布与维护命令
 ```bash
 # 全栈静默构建启动
 docker compose up -d --build
@@ -226,7 +226,7 @@ docker compose up -d --no-deps backend
 docker compose exec backend uv run python -m src.Cinema.seeder
 ```
 
-### 2.8 🚀 操作系统级高并发优化 (OS Tweaks)
+### 2.8 操作系统级高并发优化 (OS Tweaks)
 当抢票并发峰值极大时，宿主服务器必须调高文件句柄及回收 TIME_WAIT 连接。
 - 在 `/etc/security/limits.conf` 追加：
   ```text
