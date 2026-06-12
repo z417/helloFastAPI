@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import DECIMAL, INT, SMALLINT, TIMESTAMP, VARCHAR, ForeignKey, Uuid
+from sqlalchemy import DECIMAL, INT, SMALLINT, TIMESTAMP, VARCHAR, ForeignKey, Uuid, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.common import Base, CommonAttr
@@ -176,6 +176,7 @@ class TicketOrder(Base, CommonAttr):
     """
 
     __tablename__ = "ticket_order"
+    __table_args__ = (UniqueConstraint("showtime_id", "seat_id", name="uq_showtime_seat"),)
 
     uid: Mapped[UUID] = mapped_column(
         Uuid(native_uuid=True),
